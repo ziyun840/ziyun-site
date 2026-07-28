@@ -258,7 +258,7 @@ async function login(){
  try{
   const d=await call('/login',{method:'POST',body:JSON.stringify({username:u,password:p})});
   token=d.token;localStorage.setItem('zy-t',token);
-  user={username:d.username,role:d.role};ui();
+  user={username:d.username,role:d.role};ui(true);
   $('passInput').value='';
   const suffix=user.role==='admin'?'（管理员）':'';
   status('👋 欢迎回来，'+user.username+suffix,'fa-check-circle','#2a7a4a');
@@ -423,12 +423,12 @@ function updateGreeting(){
  $('greeting').textContent='👋 '+g+'，'+un+suffix;
 }
 
-function ui(){
+function ui(autoAdmin){
  if(user){
   const a=user.role==='admin';
   $('badgeText').textContent=a?'管理员':user.username;
   updateGreeting();
-  if(a){$('adminPanel').classList.add('active');$('normalView').style.display='none';loadAdmin()}
+  if(a&&autoAdmin){$('adminPanel').classList.add('active');$('normalView').style.display='none';loadAdmin()}
   else{$('adminPanel').classList.remove('active');$('normalView').style.display='grid'}
   $('passInput').value='';
  }else{
