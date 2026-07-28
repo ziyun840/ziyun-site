@@ -330,7 +330,7 @@ async function loadAdmin(){
   const tb=$('userBody');tb.innerHTML='';
   (d.users||[]).forEach(u=>{
    tr=document.createElement('tr');
-   tr.innerHTML='<td>'+u.username+'</td><td><input class="edit-input" value="'+(u.password||'')+'" data-u="'+u.username+'" data-f="p"></td><td><input class="edit-input" value="'+(u.role||'user')+'" data-u="'+u.username+'" data-f="r" style="max-width:70px"></td><td><button class="btn-sm su" data-u="'+u.username+'">💾</button> '+(u.username!=='admin'?'<button class="btn-sm danger du" data-u="'+u.username+'">🗑️</button>':'')+'</td>';
+   tr.innerHTML='<td><input class="edit-input" value="'+(u.username||'')+'" data-u="'+u.username+'" data-f="u"></td><td><input class="edit-input" value="'+(u.password||'')+'" data-u="'+u.username+'" data-f="p"></td><td><input class="edit-input" value="'+(u.role||'user')+'" data-u="'+u.username+'" data-f="r" style="max-width:70px"></td><td><button class="btn-sm su" data-u="'+u.username+'">💾</button> '+(u.username!=='admin'?'<button class="btn-sm danger du" data-u="'+u.username+'">🗑️</button>':'')+'</td>';
    tb.appendChild(tr);
   });
  }catch(e){}
@@ -359,9 +359,10 @@ async function loadLogs(f){
 
 async function saveUser(u){
  try{
+  const nu=document.querySelector('input[data-u="'+u+'"][data-f="u"]').value.trim();
   const p=document.querySelector('input[data-u="'+u+'"][data-f="p"]').value;
   const r=document.querySelector('input[data-u="'+u+'"][data-f="r"]').value;
-  await call('/admin/users/'+encodeURIComponent(u),{method:'PUT',body:JSON.stringify({password:p,role:r})});
+  await call('/admin/users/'+encodeURIComponent(u),{method:'PUT',body:JSON.stringify({newUser:nu,password:p,role:r})});
   toast('✅ 已保存','fa-check-circle',1500);loadAdmin();
  }catch(e){toast('❌ '+e.message,'fa-times-circle',2000)}
 }

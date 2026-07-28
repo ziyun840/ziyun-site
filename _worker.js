@@ -118,10 +118,19 @@ export default {
         const u = await getUser();
         if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
         const tu = decodeURIComponent(path.replace('/api/admin/users/', ''));
-        const { password, role } = body;
+        const { newUser, password, role } = body;
+        if (!newUser || newUser.length < 3) return json({ error: '用户名至少3个字符' }, 400);
         if (tu === 'admin' && role !== 'admin') return json({ error: '管理员角色不可变更' }, 400);
-        await env.DB.prepare('UPDATE users SET password_hash = ?, role = ? WHERE username = ?').bind(password, role, tu).run();
-        await log(u, 'update', '修改用户: ' + tu);
+        if (newUser !== tu) {
+          // 用户名变更
+          await env.DB.prepare('DELETE FROM sessions WHERE username = ?').bind(tu).run();
+          await env.DB.prepare('DELETE FROM users WHERE username = ?').bind(tu).run();
+          await env.DB.prepare('INSERT INTO users (username,password_hash,role) VALUES (?,?,?)').bind(newUser, password, role).run();
+          await log(u, 'update', '修改用户: ' + tu + ' → ' + newUser);
+        } else {
+          await env.DB.prepare('UPDATE users SET password_hash = ?, role = ? WHERE username = ?').bind(password, role, tu).run();
+          await log(u, 'update', '修改用户: ' + tu);
+        }
         return json({ success: true });
       }
 
