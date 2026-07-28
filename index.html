@@ -168,7 +168,19 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
   </div>
   <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th></tr></thead><tbody id="logBody"></tbody></table></div>
   <div style="margin:.8rem 0 .4rem;font-weight:500;color:var(--text2)"><i class="fas fa-edit"></i> 用户管理</div>
-  <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>用户名</th><th>密码</th><th>角色</th><th>操作</th></tr></thead><tbody id="userBody"></tbody></table></div>
+  <div id="userSelectWrap" style="margin-bottom:.8rem">
+   <select id="userSelect" style="width:100%;padding:10px 14px;border-radius:20px;background:var(--inp-bg);border:1px solid var(--inp-bd);color:var(--text1);font-size:.95rem"><option value="">— 选择用户 —</option></select>
+  </div>
+  <div id="editForm" style="display:none;background:var(--sec-bg);border-radius:24px;padding:1.2rem 1.4rem;border:1px solid var(--card-border)">
+   <div class="fg"><label>用户名</label><input class="edit-input" id="editUser" placeholder="新用户名"></div>
+   <div class="fg"><label>密码</label><input class="edit-input" id="editPass" placeholder="新密码" type="text"></div>
+   <div class="fg"><label>角色</label><select id="editRole" style="width:100%;padding:10px 14px;border-radius:20px;background:var(--inp-bg);border:1px solid var(--inp-bd);color:var(--text1);font-size:.95rem"><option value="user">普通用户</option><option value="admin">管理员</option></select></div>
+   <div class="fg flex" style="gap:10px">
+    <button class="btn btn-p" id="editSaveBtn" style="flex:1"><i class="fas fa-check"></i> 保存</button>
+    <button class="btn btn-o" id="editCancelBtn" style="flex:1"><i class="fas fa-times"></i> 取消</button>
+   </div>
+  </div>
+  <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>用户名</th><th>角色</th><th>操作</th></tr></thead><tbody id="userBody"></tbody></table></div>
   <div class="recent-log"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
   <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
    <button class="btn btn-o" id="refreshBtn"><i class="fas fa-sync"></i> 刷新</button>
@@ -317,6 +329,8 @@ setInterval(()=>{
 },5000);
 
 // ---- 管理员面板 ----
+let selectedUser=null;
+let usersData=[];
 async function loadAdmin(){
  if(!user||user.role!=='admin')return;
  try{
@@ -327,14 +341,46 @@ async function loadAdmin(){
  }catch(e){}
  try{
   const d=await call('/admin/users');
+  usersData=d.users||[];
+  const sel=$('userSelect');
+  sel.innerHTML='<option value="">— 选择用户 —</option>';
   const tb=$('userBody');tb.innerHTML='';
-  (d.users||[]).forEach(u=>{
-   tr=document.createElement('tr');
-   tr.innerHTML='<td><input class="edit-input" value="'+(u.username||'')+'" data-u="'+u.username+'" data-f="u"></td><td><input class="edit-input" value="'+(u.password||'')+'" data-u="'+u.username+'" data-f="p"></td><td><input class="edit-input" value="'+(u.role||'user')+'" data-u="'+u.username+'" data-f="r" style="max-width:70px"></td><td><button class="btn-sm su" data-u="'+u.username+'">💾</button> '+(u.username!=='admin'?'<button class="btn-sm danger du" data-u="'+u.username+'">🗑️</button>':'')+'</td>';
+  usersData.forEach(u=>{
+   sel.innerHTML+='<option value="'+u.username+'">'+u.username+' ('+(u.role||'user')+')</option>';
+   const tr=document.createElement('tr');
+   tr.className='user-row';tr.dataset.u=u.username;
+   tr.innerHTML='<td>'+u.username+'</td><td>'+(u.role||'user')+'</td><td>'+(u.username!=='admin'?'<button class="btn-sm danger du" data-u="'+u.username+'">🗑️</button>':'—')+'</td>';
    tb.appendChild(tr);
   });
  }catch(e){}
  loadLogs();
+}
+
+function selectUser(name){
+ selectedUser=name;
+ if(!name){$('editForm').style.display='none';return}
+ const d=usersData||[];
+ const u=d.find(x=>x.username===name);
+ if(!u)return;
+ $('editUser').value=u.username||'';
+ $('editPass').value=u.password||'';
+ $('editRole').value=u.role||'user';
+ $('editForm').style.display='block';
+}
+
+async function saveEdit(){
+ if(!selectedUser)return;
+ try{
+  const nu=$('editUser').value.trim();
+  const p=$('editPass').value.trim();
+  const r=$('editRole').value;
+  if(!nu||nu.length<3){toast('❌ 用户名至少3个字符','fa-times-circle',2000);return}
+  await call('/admin/users/'+encodeURIComponent(selectedUser),{method:'PUT',body:JSON.stringify({newUser:nu,password:p,role:r})});
+  toast('✅ 已保存','fa-check-circle',1500);
+  $('editForm').style.display='none';
+  selectedUser=null;
+  loadAdmin();
+ }catch(e){toast('❌ '+e.message,'fa-times-circle',2000)}
 }
 
 async function loadLogs(f){
@@ -357,15 +403,6 @@ async function loadLogs(f){
  }catch(e){}
 }
 
-async function saveUser(u){
- try{
-  const nu=document.querySelector('input[data-u="'+u+'"][data-f="u"]').value.trim();
-  const p=document.querySelector('input[data-u="'+u+'"][data-f="p"]').value;
-  const r=document.querySelector('input[data-u="'+u+'"][data-f="r"]').value;
-  await call('/admin/users/'+encodeURIComponent(u),{method:'PUT',body:JSON.stringify({newUser:nu,password:p,role:r})});
-  toast('✅ 已保存','fa-check-circle',1500);loadAdmin();
- }catch(e){toast('❌ '+e.message,'fa-times-circle',2000)}
-}
 async function delUser(u){
  if(!confirm('删除 '+u+'？'))return;
  try{await call('/admin/users/'+encodeURIComponent(u),{method:'DELETE'});toast('🗑️ 已删除','fa-trash',1500);loadAdmin()}catch(e){toast('❌ '+e.message,'fa-times-circle',2000)}
@@ -417,9 +454,11 @@ document.querySelectorAll('#logFilters .filter-btn').forEach(b=>{
  }
 });
 // 用户表事件委托
+$('userSelect').onchange=function(){selectUser(this.value)};
+$('editSaveBtn').onclick=function(){saveEdit()};
+$('editCancelBtn').onclick=function(){$('editForm').style.display='none';selectedUser=null};
 $('userBody').onclick=function(e){
  const t=e.target.closest('button');if(!t)return;
- if(t.classList.contains('su'))saveUser(t.dataset.u);
  if(t.classList.contains('du'))delUser(t.dataset.u);
 };
 
