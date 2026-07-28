@@ -199,7 +199,7 @@ let user=null;
 async function call(path,opts){
  const h={'Content-Type':'application/json'};
  if(token)h['Authorization']='Bearer '+token;
- const r=await fetch(API+path,{...opts,h});
+ const r=await fetch(API+path,{...opts,headers:h});
  const d=await r.json();
  if(!r.ok)throw new Error(d.error||'请求失败');
  return d;
@@ -208,8 +208,13 @@ async function call(path,opts){
 // ---- 恢复会话 ----
 async function restore(){
  if(!token)return;
- try{const d=await call('/me');if(d.user){user=d.user;ui()}}catch(e){}
- token=null;localStorage.removeItem('zy-t');ui();
+ try{
+  const d=await call('/me');
+  if(d.user){user=d.user;}
+ }catch(e){
+  token=null;localStorage.removeItem('zy-t');
+ }
+ ui();
 }
 
 // ---- Toast ----
