@@ -63,6 +63,8 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .contact-item{display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--text2);background:rgba(255,255,255,.2);padding:6px 18px;border-radius:40px;border:1px solid rgba(255,255,255,.3)}
 .contact-item a{color:var(--text2);text-decoration:none}
 .footer-note{margin-top:1.2rem;text-align:right;font-size:.8rem;color:var(--text3);opacity:.6;border-top:1px solid rgba(255,255,255,.2);padding-top:1rem}
+.poem-bar{margin-top:.8rem;text-align:center;font-size:.85rem;color:var(--text4);opacity:.75;font-style:italic;padding:.6rem 0;border-top:1px solid rgba(255,255,255,.12);line-height:1.6}
+.poem-bar i{opacity:.5;margin-right:6px}
 
 /* 管理员面板 */
 .admin-panel{display:none;margin-top:1.2rem;background:rgba(255,255,255,.2);border-radius:40px;padding:1.8rem 2rem;border:1px solid var(--card-border)}
@@ -195,6 +197,7 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
   </div>
  </div>
  <div class="footer-note"><i class="fas fa-shield-alt"></i> 子云专属 · D1云端版</div>
+ <div class="poem-bar" id="poemBar"><i class="fas fa-feather-alt"></i> <span id="poemText"></span></div>
 </div>
 <button class="back-to-top" id="backTop"><i class="fas fa-arrow-up"></i></button>
 <div class="toast-message" id="toastMsg"><i class="fas fa-info-circle"></i> <span id="toastText">提示</span></div>
@@ -476,6 +479,46 @@ $('userBody').onclick=function(e){
  const t=e.target.closest('button');if(!t)return;
  if(t.classList.contains('du'))delUser(t.dataset.u);
 };
+
+// ---- 每日古诗 ----
+const poems=[
+ '路漫漫其修远兮，吾将上下而求索。——屈原《离骚》',
+ '天行健，君子以自强不息。——《周易》',
+ '长风破浪会有时，直挂云帆济沧海。——李白《行路难》',
+ '海内存知己，天涯若比邻。——王勃《送杜少府之任蜀州》',
+ '会当凌绝顶，一览众山小。——杜甫《望岳》',
+ '问渠那得清如许？为有源头活水来。——朱熹《观书有感》',
+ '纸上得来终觉浅，绝知此事要躬行。——陆游《冬夜读书示子聿》',
+ '大鹏一日同风起，扶摇直上九万里。——李白《上李邕》',
+ '山重水复疑无路，柳暗花明又一村。——陆游《游山西村》',
+ '人生自古谁无死？留取丹心照汗青。——文天祥《过零丁洋》',
+ '千淘万漉虽辛苦，吹尽狂沙始到金。——刘禹锡《浪淘沙》',
+ '但愿人长久，千里共婵娟。——苏轼《水调歌头》',
+ '莫愁前路无知己，天下谁人不识君。——高适《别董大》',
+ '宝剑锋从磨砺出，梅花香自苦寒来。——《警世贤文》',
+ '业精于勤，荒于嬉；行成于思，毁于随。——韩愈《进学解》',
+ '非淡泊无以明志，非宁静无以致远。——诸葛亮《诫子书》',
+ '黑发不知勤学早，白首方悔读书迟。——颜真卿《劝学》',
+ '读书破万卷，下笔如有神。——杜甫《奉赠韦左丞丈二十二韵》',
+ '博观而约取，厚积而薄发。——苏轼《稼说送张琥》',
+ '学而不思则罔，思而不学则殆。——《论语》',
+ '温故而知新，可以为师矣。——《论语》',
+ '三人行，必有我师焉。——《论语》',
+ '知之者不如好之者，好之者不如乐之者。——《论语》',
+ '己所不欲，勿施于人。——《论语》',
+ '有志者，事竟成。——《后汉书》',
+ '千里之行，始于足下。——《老子》',
+ '天将降大任于是人也，必先苦其心志，劳其筋骨。——《孟子》',
+ '穷则独善其身，达则兼济天下。——《孟子》',
+ '老当益壮，宁移白首之心？穷且益坚，不坠青云之志。——王勃《滕王阁序》',
+ '落霞与孤鹜齐飞，秋水共长天一色。——王勃《滕王阁序》',
+];
+(function(){
+ const n=new Date();
+ const dayKey=n.getFullYear()*10000+(n.getMonth()+1)*100+n.getDate();
+ const idx=dayKey%poems.length;
+ $('poemText').textContent=poems[idx];
+})();
 
 // ---- 初始化 ----
 restore().then(()=>{if(!user)status('🔓 请输入用户名和密码','fa-comment-dots','#4d6a8a')});
