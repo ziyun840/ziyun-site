@@ -1,0 +1,8 @@
+name = "ziyun-site"
+compatibility_date = "2026-07-27"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ziyun-site-db"
+database_id = "5a51d623-01a7-4cd0-b8ab-69ce07c86d52"
