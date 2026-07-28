@@ -213,7 +213,10 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
   <button class="btn btn-p" id="dlSaveBtn" style="margin-bottom:1rem"><i class="fas fa-save"></i> 保存全部</button>
   <hr style="border:none;border-top:1px solid var(--card-border);margin:.8rem 0">
   <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th></tr></thead><tbody id="logBody"></tbody></table></div>
-  <div class="recent-log"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
+  <div style="margin-top:10px;display:flex;gap:12px;align-items:center">
+   <div class="recent-log" style="margin-top:0;flex:1"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
+   <button class="btn-sm danger" id="clearLogsBtn" style="flex-shrink:0;white-space:nowrap"><i class="fas fa-trash-alt"></i> 清空日志</button>
+  </div>
   <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
    <button class="btn btn-o" id="chartBtn"><i class="fas fa-chart-line"></i> 趋势图</button>
    <button class="btn btn-o" id="refreshBtn"><i class="fas fa-sync"></i> 刷新</button>
@@ -248,6 +251,21 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
   <canvas id="trafficChart" width="800" height="320"></canvas>
  </div>
 </div>
+<!-- 安全验证弹窗 -->
+<div class="verify-modal" id="verifyModal">
+ <div class="verify-modal-content">
+  <h3><i class="fas fa-shield-alt"></i> 安全验证</h3>
+  <p id="verifyReason">请再次输入管理员密码确认操作</p>
+  <div class="fg">
+   <input type="password" id="verifyPass" placeholder="请输入管理员密码" autocomplete="off">
+  </div>
+  <div class="verify-error" id="verifyError"><i class="fas fa-times-circle"></i> <span id="verifyErrorText">密码错误</span></div>
+  <div class="fr">
+   <button class="btn btn-o" id="verifyCancelBtn"><i class="fas fa-times"></i> 取消</button>
+   <button class="btn btn-p" id="verifyConfirmBtn"><i class="fas fa-check"></i> 确认</button>
+  </div>
+ </div>
+</div>
 <style>
 .chart-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;padding:20px}
 .chart-modal.active{display:flex}
@@ -256,6 +274,20 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .chart-tabs{display:flex;gap:6px}
 #trafficChart{width:100%;height:auto;border-radius:16px;background:rgba(255,255,255,.06);max-height:340px}
 @keyframes pulse{0%{opacity:1}50%{opacity:.3}100%{opacity:1}}
+/* 安全验证弹窗 */
+.verify-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);z-index:1100;align-items:center;justify-content:center;padding:20px}
+.verify-modal.active{display:flex}
+.verify-modal-content{background:var(--card-bg);border-radius:40px;padding:2rem 2.2rem;max-width:420px;width:100%;border:1px solid var(--card-border);box-shadow:0 40px 80px rgba(0,0,0,.25);animation:fadeUp .3s ease-out}
+.verify-modal-content h3{font-weight:500;font-size:1.3rem;color:var(--text1);margin-bottom:.5rem;display:flex;align-items:center;gap:10px}
+.verify-modal-content h3 i{color:var(--gold)}
+.verify-modal-content p{font-size:.9rem;color:var(--text3);margin-bottom:1.2rem;line-height:1.5}
+.verify-modal-content .fg{margin-bottom:1.2rem}
+.verify-modal-content .fg input{width:100%;padding:14px 18px;background:var(--inp-bg);border:1px solid var(--inp-bd);border-radius:60px;font-size:1rem;color:var(--text1);outline:none}
+.verify-modal-content .fg input:focus{background:var(--inp-fc);border-color:#6d93c9}
+.verify-modal-content .fr{display:flex;gap:12px}
+.verify-modal-content .fr .btn{flex:1}
+.verify-error{color:var(--red);font-size:.85rem;margin-top:8px;display:none;align-items:center;gap:6px}
+.verify-error.show{display:flex}
 </style>
 <script>
 (function(){
@@ -504,9 +536,55 @@ $('dlSaveBtn').onclick=async function(){
  }catch(e){toast('❌ '+e.message,'fa-times-circle',2000)}
 };
 
+// ---- 二次验证弹窗 ----
+let verifyResolve=null;
+function showVerifyModal(reason){
+ $('verifyReason').textContent=reason||'请再次输入管理员密码确认操作';
+ $('verifyPass').value='';
+ $('verifyError').classList.remove('show');
+ $('verifyModal').classList.add('active');
+ setTimeout(()=>$('verifyPass').focus(),100);
+ return new Promise((resolve,reject)=>{
+  verifyResolve={resolve,reject};
+ });
+}
+$('verifyConfirmBtn').onclick=async function(){
+ const pw=$('verifyPass').value.trim();
+ if(!pw){$('verifyErrorText').textContent='请输入密码';$('verifyError').classList.add('show');return}
+ try{
+  const r=await call('/admin/verify-password',{method:'POST',body:JSON.stringify({password:pw})});
+  if(r.valid){
+   $('verifyModal').classList.remove('active');
+   if(verifyResolve)verifyResolve.resolve(pw);
+  }else{
+   $('verifyErrorText').textContent='密码错误';$('verifyError').classList.add('show');
+  }
+ }catch(e){
+  $('verifyErrorText').textContent=e.message;$('verifyError').classList.add('show');
+ }
+};
+$('verifyCancelBtn').onclick=function(){
+ $('verifyModal').classList.remove('active');
+ if(verifyResolve)verifyResolve.reject('cancel');
+};
+$('verifyPass').onkeypress=function(e){
+ if(e.key==='Enter')$('verifyConfirmBtn').click();
+};
+
 async function delUser(u){
- if(!confirm('删除 '+u+'？'))return;
- try{await call('/admin/users/'+encodeURIComponent(u),{method:'DELETE'});toast('🗑️ 已删除','fa-trash',1500);loadAdmin()}catch(e){toast('❌ '+e.message,'fa-times-circle',2000)}
+ try{
+  const pw=await showVerifyModal('删除用户：'+u+'<br>请输入管理员密码确认');
+  await call('/admin/users/'+encodeURIComponent(u),{method:'DELETE',body:JSON.stringify({password:pw})});
+  toast('🗑️ 已删除','fa-trash',1500);loadAdmin();
+ }catch(e){if(e!=='cancel')toast('❌ '+e.message,'fa-times-circle',2000)}
+}
+
+async function clearLogs(){
+ try{
+  const pw=await showVerifyModal('清空所有审计日志<br>请输入管理员密码确认');
+  await call('/admin/logs',{method:'DELETE',body:JSON.stringify({password:pw})});
+  toast('✅ 日志已清空','fa-check-circle',1500);loadLogs();
+ }catch(e){if(e!=='cancel')toast('❌ '+e.message,'fa-times-circle',2000)}
 }
 
 // ---- 访客趋势图 ----
@@ -627,6 +705,7 @@ $('exitBtn').onclick=function(){
  status('👤 返回','fa-arrow-left','#1f5a7a');
 };
 $('refreshBtn').onclick=function(){if(user&&user.role==='admin'){loadAdmin();toast('🔄 已刷新','fa-sync',1500)}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
+$('clearLogsBtn').onclick=function(){if(user&&user.role==='admin'){clearLogs()}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
 $('logSearch').oninput=function(){const af=document.querySelector('#logFilters .filter-btn.active');loadLogs(af?af.dataset.fl:'all')};
 document.querySelectorAll('#logFilters .filter-btn').forEach(b=>{
  b.onclick=function(){

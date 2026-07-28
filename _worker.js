@@ -54,6 +54,72 @@ export default {
       });
     }
 
+    // === 安全机制：速率限制 & 二次验证 ===
+    const MAX_LOGIN_ATTEMPTS = 5;
+    const LOCK_DURATION_MS = 15 * 60 * 1000; // 15分钟
+
+    async function ensureLoginAttemptsTable() {
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS login_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        identifier TEXT NOT NULL UNIQUE,
+        attempts INTEGER DEFAULT 1,
+        locked_until TEXT
+      )`).run();
+    }
+
+    async function isLoginLocked(ip, username) {
+      await ensureLoginAttemptsTable();
+      const now = new Date().toISOString();
+      for (const id of [`ip:${ip}`, `user:${username}`]) {
+        const row = await env.DB.prepare(
+          'SELECT locked_until FROM login_attempts WHERE identifier = ? AND locked_until IS NOT NULL AND locked_until > ?'
+        ).bind(id, now).first();
+        if (row) return true;
+      }
+      return false;
+    }
+
+    async function getRemainingAttempts(ip, username) {
+      await ensureLoginAttemptsTable();
+      let minRemaining = MAX_LOGIN_ATTEMPTS;
+      for (const id of [`ip:${ip}`, `user:${username}`]) {
+        const row = await env.DB.prepare(
+          'SELECT attempts FROM login_attempts WHERE identifier = ? AND (locked_until IS NULL OR locked_until <= ?)'
+        ).bind(id, new Date().toISOString()).first();
+        if (row) minRemaining = Math.min(minRemaining, MAX_LOGIN_ATTEMPTS - row.attempts);
+      }
+      return Math.max(0, minRemaining);
+    }
+
+    async function recordFailedAttempt(ip, username) {
+      await ensureLoginAttemptsTable();
+      const now = new Date().toISOString();
+      for (const id of [`ip:${ip}`, `user:${username}`]) {
+        const existing = await env.DB.prepare('SELECT attempts FROM login_attempts WHERE identifier = ?').bind(id).first();
+        const attempts = (existing ? existing.attempts : 0) + 1;
+        let lockedUntil = null;
+        if (attempts >= MAX_LOGIN_ATTEMPTS) {
+          lockedUntil = new Date(Date.now() + LOCK_DURATION_MS).toISOString();
+        }
+        await env.DB.prepare(
+          `INSERT INTO login_attempts (identifier, attempts, locked_until) VALUES (?, ?, ?)
+           ON CONFLICT(identifier) DO UPDATE SET attempts = ?, locked_until = COALESCE(?, locked_until)`
+        ).bind(id, attempts, lockedUntil, attempts, lockedUntil).run();
+      }
+    }
+
+    async function clearLoginAttempts(ip, username) {
+      await ensureLoginAttemptsTable();
+      for (const id of [`ip:${ip}`, `user:${username}`]) {
+        await env.DB.prepare('DELETE FROM login_attempts WHERE identifier = ?').bind(id).run();
+      }
+    }
+
+    async function verifyAdminPassword(username, password) {
+      const row = await env.DB.prepare('SELECT password_hash FROM users WHERE username = ?').bind(username).first();
+      return row && row.password_hash === password;
+    }
+
     try {
       // === 注册 ===
       if (path === '/api/register' && method === 'POST') {
@@ -66,18 +132,43 @@ export default {
         return json({ success: true, message: '注册成功' });
       }
 
-      // === 登录 ===
+      // === 登录（带速率限制） ===
       if (path === '/api/login' && method === 'POST') {
         const { username, password } = body;
         if (!username || !password) return json({ error: '请输入用户名和密码' }, 400);
+        // 检查是否被锁定
+        if (await isLoginLocked(ip, username)) {
+          await log('system', 'locked', '登录锁定（IP:'+ip+' 用户:'+username+'）');
+          return json({ error: '登录已锁定，请15分钟后再试', locked: true, remaining: 0 }, 429);
+        }
         const u = await env.DB.prepare('SELECT username,password_hash,role FROM users WHERE username = ?').bind(username).first();
-        if (!u || u.password_hash !== password) return json({ error: '用户名或密码错误' }, 401);
+        if (!u || u.password_hash !== password) {
+          await recordFailedAttempt(ip, username);
+          const remaining = await getRemainingAttempts(ip, username);
+          if (remaining <= 0) {
+            await log('system', 'locked', '登录锁定（IP:'+ip+' 用户:'+username+'）');
+            return json({ error: '登录已锁定，请15分钟后再试', locked: true, remaining: 0 }, 429);
+          }
+          return json({ error: '用户名或密码错误，还可尝试 '+remaining+' 次', remaining }, 401);
+        }
+        // 登录成功，清除失败记录
+        await clearLoginAttempts(ip, username);
         const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
         let token = '';
         for (let i = 0; i < 32; i++) token += chars.charAt(Math.floor(Math.random() * chars.length));
         await env.DB.prepare('INSERT INTO sessions (token,username) VALUES (?,?)').bind(token, username).run();
         await log(username, u.role === 'admin' ? 'admin' : 'login', u.role === 'admin' ? '管理员登录' : '用户登录');
         return json({ success: true, token, username: u.username, role: u.role });
+      }
+
+      // === 二次验证密码（敏感操作前调用） ===
+      if (path === '/api/admin/verify-password' && method === 'POST') {
+        const u = await getUser();
+        if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
+        const { password } = body;
+        if (!password) return json({ error: '请输入密码' }, 400);
+        const ok = await verifyAdminPassword(u, password);
+        return json({ valid: ok });
       }
 
       // === 退出 ===
@@ -134,12 +225,17 @@ export default {
         return json({ success: true });
       }
 
-      // === 删除用户 ===
+      // === 删除用户（需二次验证） ===
       if (path.startsWith('/api/admin/users/') && method === 'DELETE') {
         const u = await getUser();
         if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
         const tu = decodeURIComponent(path.replace('/api/admin/users/', ''));
         if (tu === 'admin') return json({ error: '不能删除管理员' }, 400);
+        // 二次验证：必须提供当前管理员密码
+        const { password } = body;
+        if (!password || !(await verifyAdminPassword(u, password))) {
+          return json({ error: '密码验证失败，操作已取消', verifyFailed: true }, 403);
+        }
         await env.DB.prepare('DELETE FROM users WHERE username = ?').bind(tu).run();
         await env.DB.prepare('DELETE FROM sessions WHERE username = ?').bind(tu).run();
         await log(u, 'delete', '删除用户: ' + tu);
@@ -158,11 +254,17 @@ export default {
         return json({ logs: results });
       }
 
-      // === 清空日志 ===
+      // === 清空日志（需二次验证） ===
       if (path === '/api/admin/logs' && method === 'DELETE') {
         const u = await getUser();
         if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
+        // 二次验证：必须提供当前管理员密码
+        const { password } = body;
+        if (!password || !(await verifyAdminPassword(u, password))) {
+          return json({ error: '密码验证失败，操作已取消', verifyFailed: true }, 403);
+        }
         await env.DB.prepare('DELETE FROM audit_logs').run();
+        await log(u, 'delete', '清空审计日志');
         return json({ success: true });
       }
 
