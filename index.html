@@ -99,6 +99,11 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .stat-card i{font-size:1.6rem;color:var(--accent);display:block;margin-bottom:2px}
 .stat-card .num{font-size:1.6rem;font-weight:500;color:var(--text1)}
 .stat-card .lbl{font-size:.7rem;color:var(--text3);opacity:.8}
+.chart-section{background:var(--sec-bg);border-radius:24px;padding:1rem 1.2rem;margin-bottom:1.5rem;border:1px solid var(--card-border)}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;font-size:.95rem;color:var(--text2)}
+.chart-header span{font-weight:500}
+.chart-tabs{display:flex;gap:6px}
+#trafficChart{width:100%;height:auto;border-radius:12px;background:rgba(255,255,255,.06)}
 .admin-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:1.2rem;align-items:center}
 .search-box{flex:1;min-width:180px;display:flex;align-items:center;background:var(--inp-bg);border:1px solid var(--inp-bd);border-radius:60px;padding:0 18px}
 .search-box input{flex:1;background:transparent;border:none;padding:10px 0;font-size:.9rem;color:var(--text1);outline:none}
@@ -182,6 +187,12 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
    <div class="stat-card"><i class="fas fa-users"></i><div class="num" id="totalUsers">0</div><div class="lbl">总账户</div></div>
    <div class="stat-card"><i class="fas fa-user-check"></i><div class="num" id="recentLogins">0</div><div class="lbl">24h操作</div></div>
    <div class="stat-card"><i class="fas fa-tachometer-alt"></i><div class="num" id="trafficUsage">0 MB</div><div class="lbl">今日流量</div></div>
+  </div>
+  <div class="chart-section">
+   <div class="chart-header"><span>📊 访客趋势</span>
+    <div class="chart-tabs"><button class="filter-btn active" data-chart="7">7天</button><button class="filter-btn" data-chart="30">30天</button></div>
+   </div>
+   <canvas id="trafficChart" width="600" height="180"></canvas>
   </div>
   <div class="admin-toolbar">
    <div class="search-box"><i class="fas fa-search"></i><input type="text" id="logSearch" placeholder="搜索..."></div>
@@ -410,6 +421,7 @@ async function loadAdmin(){
  }catch(e){}
  try{await loadDownloads()}catch(e){}
  renderDlAdmin();
+ loadTraffic();
  loadLogs();
 }
 
@@ -486,6 +498,66 @@ async function delUser(u){
  if(!confirm('删除 '+u+'？'))return;
  try{await call('/admin/users/'+encodeURIComponent(u),{method:'DELETE'});toast('🗑️ 已删除','fa-trash',1500);loadAdmin()}catch(e){toast('❌ '+e.message,'fa-times-circle',2000)}
 }
+
+// ---- 访客趋势图 ----
+let chartDays=7;
+async function loadTraffic(){
+ try{
+  const d=await call('/admin/traffic?days='+chartDays);
+  drawTrafficChart(d.traffic||[]);
+ }catch(e){}
+}
+function drawTrafficChart(data){
+ const c=$('trafficChart'),ctx=c.getContext('2d');
+ if(!data.length){ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='rgba(200,200,200,.3)';ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('暂无数据',c.width/2,c.height/2);return}
+ const pad={t:15,b:15,l:30,r:10},w=c.width-pad.l-pad.r,h=c.height-pad.t-pad.b;
+ const max=Math.max(...data.map(d=>d.bytes),1);
+ ctx.clearRect(0,0,c.width,c.height);
+ const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+ const lineCol=isDark?'rgba(88,166,255,.8)':'rgba(42,75,122,.7)';
+ const fillCol=isDark?'rgba(88,166,255,.12)':'rgba(42,75,122,.08)';
+ const dotCol=isDark?'rgba(88,166,255,1)':'rgba(42,75,122,.9)';
+ const gridCol=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.04)';
+ // 网格线
+ ctx.strokeStyle=gridCol;ctx.lineWidth=1;
+ for(let i=0;i<=4;i++){
+  const y=pad.t+h*(1-i/4);
+  ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w+pad.l,y);ctx.stroke();
+  ctx.fillStyle=isDark?'rgba(255,255,255,.2)':'rgba(0,0,0,.2)';ctx.font='10px sans-serif';ctx.textAlign='right';
+  ctx.fillText(Math.round(max*i/4/1024)+'KB',pad.l-5,y+3);
+ }
+ // 折线
+ const xStep=w/(data.length-1||1);
+ ctx.beginPath();
+ data.forEach((d,i)=>{
+  const x=pad.l+i*xStep,y=pad.t+h*(1-d.bytes/max);
+  i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+ });
+ ctx.strokeStyle=lineCol;ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
+ // 填充
+ ctx.lineTo(pad.l+(data.length-1)*xStep,pad.t+h);
+ ctx.lineTo(pad.l,pad.t+h);
+ ctx.closePath();
+ ctx.fillStyle=fillCol;ctx.fill();
+ // 圆点 + 日期
+ data.forEach((d,i)=>{
+  const x=pad.l+i*xStep,y=pad.t+h*(1-d.bytes/max);
+  ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fillStyle=dotCol;ctx.fill();
+  if(data.length<=10||i%Math.ceil(data.length/7)===0||i===data.length-1){
+   ctx.fillStyle=isDark?'rgba(255,255,255,.35)':'rgba(0,0,0,.3)';ctx.font='9px sans-serif';ctx.textAlign='center';
+   ctx.fillText(d.date,x,y+14);
+  }
+ });
+}
+// 图表切换
+document.querySelectorAll('[data-chart]').forEach(b=>{
+ b.onclick=function(){
+  document.querySelectorAll('[data-chart]').forEach(x=>x.classList.remove('active'));
+  this.classList.add('active');
+  chartDays=parseInt(this.dataset.chart);
+  loadTraffic();
+ };
+});
 
 // ---- UI 更新 ----
 function updateGreeting(){

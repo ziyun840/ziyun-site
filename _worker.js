@@ -174,6 +174,24 @@ export default {
         return json({ success: true });
       }
 
+      // === 访客趋势 ===
+      if (path === '/api/admin/traffic' && method === 'GET') {
+        const u = await getUser();
+        if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
+        const days = parseInt(url.searchParams.get('days')) || 7;
+        const { results } = await env.DB.prepare('SELECT date, bytes FROM traffic WHERE date >= date("now", ? || " days") ORDER BY date ASC').bind('-' + days).all();
+        // 补全没有数据的日期
+        const data = [];
+        for (let i = days - 1; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const ds = d.toISOString().slice(0, 10);
+          const found = results.find(r => r.date === ds);
+          data.push({ date: ds.slice(5), bytes: found ? found.bytes : 0 });
+        }
+        return json({ traffic: data });
+      }
+
       // === 获取下载链接 ===
       if (path === '/api/downloads' && method === 'GET') {
         const { results } = await env.DB.prepare('SELECT id, name, url FROM downloads ORDER BY sort_order ASC, id ASC').all();
