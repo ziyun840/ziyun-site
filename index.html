@@ -425,7 +425,8 @@ async function loadAdmin(){
    sel.innerHTML+='<option value="'+u.username+'">'+u.username+' ('+(u.role||'user')+')</option>';
    const tr=document.createElement('tr');
    tr.className='user-row';tr.dataset.u=u.username;
-   tr.innerHTML='<td>'+u.username+'</td><td>'+(u.role||'user')+'</td><td>'+(u.username!=='admin'?'<button class="btn-sm danger du" data-u="'+u.username+'">🗑️</button>':'—')+'</td>';
+   const isAdm=u.role==='admin';
+   tr.innerHTML='<td>'+u.username+'</td><td>'+(isAdm?'管理员':'普通')+'</td><td>'+(u.username!=='admin'?(isAdm?'<button class="btn-sm su" data-u="'+u.username+'" data-act="demote">降级</button> ':'<button class="btn-sm su" data-u="'+u.username+'" data-act="promote">升级</button> ')+'<button class="btn-sm danger du" data-u="'+u.username+'">🗑️</button>':'—')+'</td>';
    tb.appendChild(tr);
   });
  }catch(e){}
@@ -640,7 +641,17 @@ $('editCancelBtn').onclick=function(){$('editForm').style.display='none';selecte
 $('userBody').onclick=function(e){
  const t=e.target.closest('button');if(!t)return;
  if(t.classList.contains('du'))delUser(t.dataset.u);
+ if(t.dataset.act==='promote')toggleRole(t.dataset.u,'admin');
+ if(t.dataset.act==='demote')toggleRole(t.dataset.u,'user');
 };
+async function toggleRole(u,role){
+ try{
+  const p=usersData.find(x=>x.username===u)?.password||'';
+  await call('/admin/users/'+encodeURIComponent(u),{method:'PUT',body:JSON.stringify({newUser:u,password:p,role})});
+  toast(role==='admin'?'✅ '+u+' 已升级为管理员':'✅ '+u+' 已降级为普通用户','fa-check-circle',2000);
+  loadAdmin();
+ }catch(e){toast('❌ '+e.message,'fa-times-circle',2000)}
+}
 
 // ---- 每日古诗 ----
 const poems=[
