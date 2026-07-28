@@ -317,9 +317,7 @@ ttBtn.addEventListener('click',function(){
 function clock(){
  const n=new Date();
  $('liveTime').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
- const h=n.getHours();let g='下午好';
- if(h>=5&&h<12)g='早上好';else if(h>=12&&h<14)g='中午好';else if(h>=18)g='晚上好';
- $('greeting').textContent='👋 '+g+'，子云';
+ updateGreeting();
 }
 clock();setInterval(clock,1000);
 
@@ -416,10 +414,20 @@ async function delUser(u){
 }
 
 // ---- UI 更新 ----
+function updateGreeting(){
+ const n=new Date();
+ const h=n.getHours();let g='下午好';
+ if(h>=5&&h<12)g='早上好';else if(h>=12&&h<14)g='中午好';else if(h>=18)g='晚上好';
+ const un=user?user.username:'子云';
+ const suffix=user&&user.role==='admin'?'（管理员）':'';
+ $('greeting').textContent='👋 '+g+'，'+un+suffix;
+}
+
 function ui(){
  if(user){
   const a=user.role==='admin';
   $('badgeText').textContent=a?'管理员':user.username;
+  updateGreeting();
   if(a){$('adminPanel').classList.add('active');$('normalView').style.display='none';loadAdmin()}
   else{$('adminPanel').classList.remove('active');$('normalView').style.display='grid'}
   $('passInput').value='';
