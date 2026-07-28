@@ -174,6 +174,27 @@ export default {
         return json({ success: true });
       }
 
+      // === 获取下载链接 ===
+      if (path === '/api/downloads' && method === 'GET') {
+        const { results } = await env.DB.prepare('SELECT id, name, url FROM downloads ORDER BY sort_order ASC, id ASC').all();
+        return json({ downloads: results });
+      }
+
+      // === 管理员更新下载链接 ===
+      if (path === '/api/admin/downloads' && method === 'PUT') {
+        const u = await getUser();
+        if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
+        const { items } = body;
+        if (!items || !Array.isArray(items)) return json({ error: '参数错误' }, 400);
+        await env.DB.prepare('DELETE FROM downloads').run();
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          await env.DB.prepare('INSERT INTO downloads (name, url, sort_order) VALUES (?,?,?)').bind(item.name || '未命名', item.url || '#', i).run();
+        }
+        await log(u, 'update', '更新下载链接');
+        return json({ success: true });
+      }
+
       return json({ error: 'Not found' }, 404);
     } catch (err) {
       console.error(err);

@@ -160,10 +160,8 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
   <div class="dl-section">
    <h2><i class="fas fa-download"></i> 下载中心</h2>
    <div class="dl-desc">登录后点击下载，跳转蓝奏云</div>
-   <div class="dl-items">
-    <div class="dl-item"><div class="dl-info"><i class="fas fa-file-archive"></i><span>子云工具包 v2.6</span></div><a href="#" class="dl-link" data-pkg="子云工具包 v2.6"><i class="fas fa-external-link-alt"></i> 下载</a></div>
-    <div class="dl-item"><div class="dl-info"><i class="fas fa-code"></i><span>子云开发者套件</span></div><a href="#" class="dl-link" data-pkg="子云开发者套件"><i class="fas fa-external-link-alt"></i> 下载</a></div>
-    <div class="dl-item"><div class="dl-info"><i class="fas fa-mobile-alt"></i><span>子云移动端</span></div><a href="#" class="dl-link" data-pkg="子云移动端"><i class="fas fa-external-link-alt"></i> 下载</a></div>
+   <div class="dl-items" id="downloadList">
+    <div style="text-align:center;padding:1rem;opacity:.5">加载中...</div>
    </div>
   </div>
   <div class="ac-section">
@@ -209,6 +207,10 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
    </div>
   </div>
   <div class="admin-table-wrap" style="margin-bottom:1.2rem"><table class="admin-table"><thead><tr><th>用户名</th><th>角色</th><th>操作</th></tr></thead><tbody id="userBody"></tbody></table></div>
+  <div style="margin:.8rem 0 .4rem;font-weight:500;color:var(--text2)"><i class="fas fa-download"></i> 下载链接管理</div>
+  <div id="dlAdminWrap" style="margin-bottom:.8rem"></div>
+  <button class="btn btn-o" id="dlAddBtn" style="margin-bottom:.6rem"><i class="fas fa-plus"></i> 添加下载项</button>
+  <button class="btn btn-p" id="dlSaveBtn" style="margin-bottom:1rem"><i class="fas fa-save"></i> 保存全部</button>
   <hr style="border:none;border-top:1px solid var(--card-border);margin:.8rem 0">
   <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th></tr></thead><tbody id="logBody"></tbody></table></div>
   <div class="recent-log"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
@@ -321,17 +323,29 @@ async function logout(){
 }
 
 // ---- 下载 ----
-const FM={'子云工具包 v2.6':{path:'https://wwbhw.lanzouq.com/b01eunc61e'},'子云开发者套件':{path:'#'},'子云移动端':{path:'#'}};
-document.querySelectorAll('.dl-link').forEach(l=>{
- l.addEventListener('click',function(e){
-  e.preventDefault();
-  if(!user){toast('🔒 请先登录','fa-lock',3000);return}
-  const p=this.dataset.pkg;
-  const info=FM[p];if(!info||info.path==='#'){toast('❌ 链接待配置','fa-exclamation-triangle',2000);return}
-  toast('📦 跳转蓝奏云','fa-cloud',2000);
-  window.open(info.path,'_blank');
- });
-});
+let dlData=[];
+async function loadDownloads(){
+ try{
+  const d=await call('/downloads');
+  dlData=d.downloads||[];
+  const list=$('downloadList');list.innerHTML='';
+  const icons=['fa-file-archive','fa-code','fa-mobile-alt','fa-cloud','fa-tools','fa-link','fa-cog','fa-star'];
+  dlData.forEach((item,i)=>{
+   const icon=icons[i%icons.length];
+   const hasUrl=item.url&&item.url!=='#';
+   list.innerHTML+='<div class="dl-item"><div class="dl-info"><i class="fas '+icon+'"></i><span>'+item.name+'</span></div><a href="'+(hasUrl?item.url:'#')+'" class="dl-link" target="'+(hasUrl?'_blank':'_self')+'" data-url="'+(item.url||'')+'"><i class="fas fa-external-link-alt"></i> 下载</a></div>';
+  });
+  document.querySelectorAll('.dl-link').forEach(l=>{
+   l.addEventListener('click',function(e){
+    const url=this.dataset.url;
+    if(!url||url==='#'){e.preventDefault();toast('❌ 链接待配置','fa-exclamation-triangle',2000);return}
+    if(!user){e.preventDefault();toast('🔒 请先登录','fa-lock',3000);return}
+    toast('📦 跳转链接','fa-cloud',2000);
+   });
+  });
+ }catch(e){}
+}
+loadDownloads();
 
 // ---- 主题 ----
 const ttBtn=$('themeToggle'),td=$('themeDot');
@@ -394,6 +408,8 @@ async function loadAdmin(){
    tb.appendChild(tr);
   });
  }catch(e){}
+ try{await loadDownloads()}catch(e){}
+ renderDlAdmin();
  loadLogs();
 }
 
@@ -443,6 +459,28 @@ async function loadLogs(f){
   $('recentText').textContent='最近: '+logs.slice(0,3).map(e=>e.username+' ('+(am[e.action]||e.action)+')').join('; ');
  }catch(e){}
 }
+
+// ---- 下载管理 ----
+function renderDlAdmin(){
+ const wrap=$('dlAdminWrap');wrap.innerHTML='';
+ dlData.forEach((item,i)=>{
+  wrap.innerHTML+='<div class="dl-item" style="margin-bottom:8px" data-idx="'+i+'"><div class="dl-info" style="flex:1;gap:8px"><input class="edit-input" id="dlName'+i+'" value="'+item.name.replace(/"/g,'&quot;')+'" placeholder="名称" style="max-width:200px"><input class="edit-input" id="dlUrl'+i+'" value="'+item.url.replace(/"/g,'&quot;')+'" placeholder="链接URL" style="flex:1;min-width:200px"></div><button class="btn-sm danger" onclick="removeDlItem('+i+')"><i class="fas fa-times"></i></button></div>';
+ });
+}
+function removeDlItem(i){dlData.splice(i,1);renderDlAdmin()}
+$('dlAddBtn').onclick=function(){dlData.push({name:'新项目',url:'#'});renderDlAdmin()};
+$('dlSaveBtn').onclick=async function(){
+ const items=[];
+ dlData.forEach((_,i)=>{
+  const n=$('dlName'+i);const u=$('dlUrl'+i);
+  if(n)items.push({name:n.value,url:u?u.value:'#'});
+ });
+ try{
+  await call('/admin/downloads',{method:'PUT',body:JSON.stringify({items})});
+  toast('✅ 下载链接已保存','fa-check-circle',2000);
+  loadDownloads();
+ }catch(e){toast('❌ '+e.message,'fa-times-circle',2000)}
+};
 
 async function delUser(u){
  if(!confirm('删除 '+u+'？'))return;
