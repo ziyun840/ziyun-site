@@ -99,11 +99,6 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .stat-card i{font-size:1.6rem;color:var(--accent);display:block;margin-bottom:2px}
 .stat-card .num{font-size:1.6rem;font-weight:500;color:var(--text1)}
 .stat-card .lbl{font-size:.7rem;color:var(--text3);opacity:.8}
-.chart-section{background:var(--sec-bg);border-radius:24px;padding:1rem 1.2rem;margin-bottom:1.5rem;border:1px solid var(--card-border)}
-.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem;font-size:.95rem;color:var(--text2)}
-.chart-header span{font-weight:500}
-.chart-tabs{display:flex;gap:6px}
-#trafficChart{width:100%;height:auto;border-radius:12px;background:rgba(255,255,255,.06)}
 .admin-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:1.2rem;align-items:center}
 .search-box{flex:1;min-width:180px;display:flex;align-items:center;background:var(--inp-bg);border:1px solid var(--inp-bd);border-radius:60px;padding:0 18px}
 .search-box input{flex:1;background:transparent;border:none;padding:10px 0;font-size:.9rem;color:var(--text1);outline:none}
@@ -188,12 +183,6 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
    <div class="stat-card"><i class="fas fa-user-check"></i><div class="num" id="recentLogins">0</div><div class="lbl">24h操作</div></div>
    <div class="stat-card"><i class="fas fa-tachometer-alt"></i><div class="num" id="trafficUsage">0 MB</div><div class="lbl">今日流量</div></div>
   </div>
-  <div class="chart-section">
-   <div class="chart-header"><span>📊 访客趋势</span>
-    <div class="chart-tabs"><button class="filter-btn active" data-chart="7">7天</button><button class="filter-btn" data-chart="30">30天</button></div>
-   </div>
-   <canvas id="trafficChart" width="600" height="180"></canvas>
-  </div>
   <div class="admin-toolbar">
    <div class="search-box"><i class="fas fa-search"></i><input type="text" id="logSearch" placeholder="搜索..."></div>
    <div class="filter-group" id="logFilters">
@@ -226,6 +215,7 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
   <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th></tr></thead><tbody id="logBody"></tbody></table></div>
   <div class="recent-log"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
   <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
+   <button class="btn btn-o" id="chartBtn"><i class="fas fa-chart-line"></i> 趋势图</button>
    <button class="btn btn-o" id="refreshBtn"><i class="fas fa-sync"></i> 刷新</button>
    <button class="btn btn-o" id="exitBtn"><i class="fas fa-arrow-left"></i> 返回</button>
   </div>
@@ -247,6 +237,26 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 </div>
 <button class="back-to-top" id="backTop"><i class="fas fa-arrow-up"></i></button>
 <div class="toast-message" id="toastMsg"><i class="fas fa-info-circle"></i> <span id="toastText">提示</span></div>
+<div class="chart-modal" id="chartModal">
+ <div class="chart-modal-content">
+  <div class="chart-modal-header"><span>📊 访客趋势 <span id="chartLiveDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#4caf50;animation:pulse 1.5s infinite;vertical-align:middle;margin-left:6px"></span></span>
+   <div style="display:flex;align-items:center;gap:10px">
+    <div class="chart-tabs"><button class="filter-btn active" data-chart="7">7天</button><button class="filter-btn" data-chart="30">30天</button></div>
+    <button class="btn-sm" id="chartCloseBtn"><i class="fas fa-times"></i></button>
+   </div>
+  </div>
+  <canvas id="trafficChart" width="800" height="320"></canvas>
+ </div>
+</div>
+<style>
+.chart-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);backdrop-filter:blur(6px);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.chart-modal.active{display:flex}
+.chart-modal-content{background:var(--card-bg);border-radius:40px;padding:1.8rem 2rem;max-width:860px;width:100%;border:1px solid var(--card-border);box-shadow:0 40px 80px rgba(0,0,0,.2);animation:fadeUp .3s ease-out}
+.chart-modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;font-size:1.1rem;font-weight:500;color:var(--text1);flex-wrap:wrap;gap:10px}
+.chart-tabs{display:flex;gap:6px}
+#trafficChart{width:100%;height:auto;border-radius:16px;background:rgba(255,255,255,.06);max-height:340px}
+@keyframes pulse{0%{opacity:1}50%{opacity:.3}100%{opacity:1}}
+</style>
 <script>
 (function(){
 'use strict';
@@ -421,7 +431,6 @@ async function loadAdmin(){
  }catch(e){}
  try{await loadDownloads()}catch(e){}
  renderDlAdmin();
- loadTraffic();
  loadLogs();
 }
 
@@ -500,7 +509,7 @@ async function delUser(u){
 }
 
 // ---- 访客趋势图 ----
-let chartDays=7;
+let chartDays=7,chartTimer=null;
 async function loadTraffic(){
  try{
   const d=await call('/admin/traffic?days='+chartDays);
@@ -508,48 +517,58 @@ async function loadTraffic(){
  }catch(e){}
 }
 function drawTrafficChart(data){
- const c=$('trafficChart'),ctx=c.getContext('2d');
- if(!data.length){ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='rgba(200,200,200,.3)';ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText('暂无数据',c.width/2,c.height/2);return}
- const pad={t:15,b:15,l:30,r:10},w=c.width-pad.l-pad.r,h=c.height-pad.t-pad.b;
+ const c=$('trafficChart');if(!c)return;
+ const ctx=c.getContext('2d');
+ c.width=c.parentElement.clientWidth-8||800;
+ c.height=Math.min(c.width*0.4,340);
+ if(!data.length){ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='rgba(200,200,200,.3)';ctx.font='16px sans-serif';ctx.textAlign='center';ctx.fillText('暂无数据',c.width/2,c.height/2);return}
+ const pad={t:25,b:20,l:45,r:15},w=c.width-pad.l-pad.r,h=c.height-pad.t-pad.b;
  const max=Math.max(...data.map(d=>d.bytes),1);
  ctx.clearRect(0,0,c.width,c.height);
  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
- const lineCol=isDark?'rgba(88,166,255,.8)':'rgba(42,75,122,.7)';
- const fillCol=isDark?'rgba(88,166,255,.12)':'rgba(42,75,122,.08)';
- const dotCol=isDark?'rgba(88,166,255,1)':'rgba(42,75,122,.9)';
- const gridCol=isDark?'rgba(255,255,255,.05)':'rgba(0,0,0,.04)';
- // 网格线
+ const lineCol=isDark?'rgba(88,166,255,.85)':'rgba(42,75,122,.75)';
+ const fillCol=isDark?'rgba(88,166,255,.15)':'rgba(42,75,122,.1)';
+ const dotCol=isDark?'rgba(88,166,255,1)':'rgba(42,75,122,.95)';
+ const gridCol=isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.05)';
+ const txtCol=isDark?'rgba(255,255,255,.25)':'rgba(0,0,0,.2)';
  ctx.strokeStyle=gridCol;ctx.lineWidth=1;
  for(let i=0;i<=4;i++){
   const y=pad.t+h*(1-i/4);
   ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w+pad.l,y);ctx.stroke();
-  ctx.fillStyle=isDark?'rgba(255,255,255,.2)':'rgba(0,0,0,.2)';ctx.font='10px sans-serif';ctx.textAlign='right';
-  ctx.fillText(Math.round(max*i/4/1024)+'KB',pad.l-5,y+3);
+  ctx.fillStyle=txtCol;ctx.font='11px sans-serif';ctx.textAlign='right';
+  const val=Math.round(max*i/4);
+  ctx.fillText(val>=1024?(val/1024).toFixed(1)+'KB':val+'B',pad.l-8,y+4);
  }
- // 折线
  const xStep=w/(data.length-1||1);
  ctx.beginPath();
  data.forEach((d,i)=>{
   const x=pad.l+i*xStep,y=pad.t+h*(1-d.bytes/max);
   i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
  });
- ctx.strokeStyle=lineCol;ctx.lineWidth=2;ctx.lineJoin='round';ctx.stroke();
- // 填充
+ ctx.strokeStyle=lineCol;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();
  ctx.lineTo(pad.l+(data.length-1)*xStep,pad.t+h);
  ctx.lineTo(pad.l,pad.t+h);
  ctx.closePath();
  ctx.fillStyle=fillCol;ctx.fill();
- // 圆点 + 日期
  data.forEach((d,i)=>{
   const x=pad.l+i*xStep,y=pad.t+h*(1-d.bytes/max);
-  ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fillStyle=dotCol;ctx.fill();
-  if(data.length<=10||i%Math.ceil(data.length/7)===0||i===data.length-1){
-   ctx.fillStyle=isDark?'rgba(255,255,255,.35)':'rgba(0,0,0,.3)';ctx.font='9px sans-serif';ctx.textAlign='center';
-   ctx.fillText(d.date,x,y+14);
+  ctx.beginPath();ctx.arc(x,y,d.bytes>0?4:0,0,Math.PI*2);ctx.fillStyle=dotCol;ctx.fill();
+  if(data.length<=10||i%Math.ceil(data.length/7)===0||i===data.length-1||i===0){
+   ctx.fillStyle=txtCol;ctx.font='10px sans-serif';ctx.textAlign='center';
+   ctx.fillText(d.date,x,y+16);
   }
  });
 }
-// 图表切换
+$('chartBtn').onclick=function(){
+ $('chartModal').classList.add('active');
+ loadTraffic();
+ if(chartTimer)clearInterval(chartTimer);
+ chartTimer=setInterval(loadTraffic,15000);
+};
+$('chartCloseBtn').onclick=function(){
+ $('chartModal').classList.remove('active');
+ if(chartTimer){clearInterval(chartTimer);chartTimer=null}
+};
 document.querySelectorAll('[data-chart]').forEach(b=>{
  b.onclick=function(){
   document.querySelectorAll('[data-chart]').forEach(x=>x.classList.remove('active'));
