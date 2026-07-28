@@ -223,7 +223,11 @@ async function restore(){
  if(!token)return;
  try{
   const d=await call('/me');
-  if(d.user){user=d.user;}
+  if(d.user){
+   user=d.user;
+   const suffix=user.role==='admin'?'（管理员）':'';
+   status('👋 欢迎回来，'+user.username+suffix,'fa-check-circle','#2a7a4a');
+  }
  }catch(e){
   token=null;localStorage.removeItem('zy-t');
  }
@@ -255,8 +259,10 @@ async function login(){
   const d=await call('/login',{method:'POST',body:JSON.stringify({username:u,password:p})});
   token=d.token;localStorage.setItem('zy-t',token);
   user={username:d.username,role:d.role};ui();
-  status('✅ 欢迎回来','fa-check-circle','#2a7a4a');
-  $('passInput').value='';toast('✅ 登录成功','fa-check-circle',2000);
+  $('passInput').value='';
+  const suffix=user.role==='admin'?'（管理员）':'';
+  status('👋 欢迎回来，'+user.username+suffix,'fa-check-circle','#2a7a4a');
+  toast('✅ 登录成功','fa-check-circle',2000);
  }catch(e){status('❌ '+e.message,'fa-times-circle','#b13e3e')}
 }
 
