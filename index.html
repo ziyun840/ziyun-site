@@ -166,12 +166,11 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
     <button class="filter-btn" data-fl="download">下载</button>
    </div>
   </div>
-  <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th></tr></thead><tbody id="logBody"></tbody></table></div>
   <div style="margin:.8rem 0 .4rem;font-weight:500;color:var(--text2)"><i class="fas fa-edit"></i> 用户管理</div>
   <div id="userSelectWrap" style="margin-bottom:.8rem">
    <select id="userSelect" style="width:100%;padding:10px 14px;border-radius:20px;background:var(--inp-bg);border:1px solid var(--inp-bd);color:var(--text1);font-size:.95rem"><option value="">— 选择用户 —</option></select>
   </div>
-  <div id="editForm" style="display:none;background:var(--sec-bg);border-radius:24px;padding:1.2rem 1.4rem;border:1px solid var(--card-border)">
+  <div id="editForm" style="display:none;background:var(--sec-bg);border-radius:24px;padding:1.2rem 1.4rem;border:1px solid var(--card-border);margin-bottom:.8rem">
    <div class="fg"><label>用户名</label><input class="edit-input" id="editUser" placeholder="新用户名"></div>
    <div class="fg"><label>密码</label><input class="edit-input" id="editPass" placeholder="新密码" type="text"></div>
    <div class="fg"><label>角色</label><select id="editRole" style="width:100%;padding:10px 14px;border-radius:20px;background:var(--inp-bg);border:1px solid var(--inp-bd);color:var(--text1);font-size:.95rem"><option value="user">普通用户</option><option value="admin">管理员</option></select></div>
@@ -180,7 +179,9 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
     <button class="btn btn-o" id="editCancelBtn" style="flex:1"><i class="fas fa-times"></i> 取消</button>
    </div>
   </div>
-  <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>用户名</th><th>角色</th><th>操作</th></tr></thead><tbody id="userBody"></tbody></table></div>
+  <div class="admin-table-wrap" style="margin-bottom:1.2rem"><table class="admin-table"><thead><tr><th>用户名</th><th>角色</th><th>操作</th></tr></thead><tbody id="userBody"></tbody></table></div>
+  <hr style="border:none;border-top:1px solid var(--card-border);margin:.8rem 0">
+  <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th></tr></thead><tbody id="logBody"></tbody></table></div>
   <div class="recent-log"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
   <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
    <button class="btn btn-o" id="refreshBtn"><i class="fas fa-sync"></i> 刷新</button>
