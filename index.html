@@ -185,7 +185,7 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
   </div>
  </div>
  <div class="admin-panel" id="adminPanel">
-  <h3><i class="fas fa-sliders-h"></i> 管理员控制面板</h3>
+  <h3 style="display:flex;align-items:center;justify-content:space-between"><span><i class="fas fa-sliders-h"></i> 管理员控制面板</span><button class="btn-sm btn-o" id="exitBtn" style="display:inline-flex;align-items:center;gap:6px"><i class="fas fa-arrow-left"></i> 返回</button></h3>
   <div class="admin-stats">
    <div class="stat-card" id="statUsers"></div>
    <div class="stat-card" id="statOps"></div>
@@ -228,7 +228,6 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
   <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
    <button class="btn btn-o" id="chartBtn"><i class="fas fa-chart-line"></i> 趋势图</button>
    <button class="btn btn-o" id="refreshBtn"><i class="fas fa-sync"></i> 刷新</button>
-   <button class="btn btn-o" id="exitBtn"><i class="fas fa-arrow-left"></i> 返回</button>
   </div>
  </div>
  <div class="contact-section">
