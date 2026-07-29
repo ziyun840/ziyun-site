@@ -575,9 +575,9 @@ setInterval(()=>{
 // ---- 管理员面板 ----
 let selectedUser=null;
 // ---- 环形统计卡片 ----
-function renderRingStat(el,val,max,label,color,icon){
- const r=30,c=2*Math.PI*r,progress=Math.min(val/(max||1),1);
- el.innerHTML='<svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="'+r+'" fill="none" stroke="rgba(128,128,128,.12)" stroke-width="5"/><circle cx="36" cy="36" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="5" stroke-dasharray="'+c+'" stroke-dashoffset="'+(c*(1-progress))+'" stroke-linecap="round" transform="rotate(-90,36,36)" style="transition:stroke-dashoffset .6s ease"/><text x="36" y="36" text-anchor="middle" dominant-baseline="central" fill="var(--text1)" font-size="'+(val>=1000?'12':'14')+'" font-weight="600">'+label+'</text></svg>';
+function renderRingStat(el,label,color){
+ const r=30,c=2*Math.PI*r,fill=0.82;
+ el.innerHTML='<svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="'+r+'" fill="none" stroke="rgba(128,128,128,.08)" stroke-width="5"/><circle cx="36" cy="36" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="5" stroke-dasharray="'+c+'" stroke-dashoffset="'+(c*(1-fill))+'" stroke-linecap="round" transform="rotate(-90,36,36)" style="opacity:.5"/><text x="36" y="36" text-anchor="middle" dominant-baseline="central" fill="var(--text1)" font-size="'+(String(label).length>5?'12':'15')+'" font-weight="600">'+label+'</text></svg>';
 }
 
 let usersData=[];
@@ -585,10 +585,10 @@ async function loadAdmin(){
  if(!user||user.role!=='admin')return;
  try{
   const s=await call('/admin/stats');
-  renderRingStat($('ringUsers'),s.totalUsers,100,String(s.totalUsers),'var(--accent)','users');
-  renderRingStat($('ringOps'),s.recentLogins,1000,String(s.recentLogins),'var(--green)','check');
+  renderRingStat($('ringUsers'),String(s.totalUsers),'var(--accent)');
+  renderRingStat($('ringOps'),String(s.recentLogins),'var(--green)');
   const kb=(s.trafficToday/1024).toFixed(1);
-  renderRingStat($('ringTraffic'),kb,500,kb+'K','var(--gold)','tachometer');
+  renderRingStat($('ringTraffic'),kb+'K','var(--gold)');
  }catch(e){}
  try{
   const d=await call('/admin/users');
@@ -988,10 +988,10 @@ setInterval(function(){
  if(user&&user.role==='admin'&&document.getElementById('adminPanel').classList.contains('active')){
   // 刷新统计数据
   call('/admin/stats').then(s=>{
-   renderRingStat(document.getElementById('ringUsers'),s.totalUsers,100,String(s.totalUsers),'var(--accent)');
-   renderRingStat(document.getElementById('ringOps'),s.recentLogins,1000,String(s.recentLogins),'var(--green)');
+   renderRingStat(document.getElementById('ringUsers'),String(s.totalUsers),'var(--accent)');
+   renderRingStat(document.getElementById('ringOps'),String(s.recentLogins),'var(--green)');
    const kb=(s.trafficToday/1024).toFixed(1);
-   renderRingStat(document.getElementById('ringTraffic'),kb,500,kb+'K','var(--gold)');
+   renderRingStat(document.getElementById('ringTraffic'),kb+'K','var(--gold)');
   }).catch(()=>{});
   // 趋势图如果开着也刷新
   if(document.getElementById('chartModal').classList.contains('active'))loadTraffic();
