@@ -907,6 +907,9 @@ $('badgeClick').onclick=function(){
   dragStarted=true;
   let x=e.clientX-offX,y=e.clientY-offY;
   if(isNaN(x)||isNaN(y))return;
+  // 限制不超出视口
+  x=Math.max(0,Math.min(x,window.innerWidth-btn.offsetWidth));
+  y=Math.max(0,Math.min(y,window.innerHeight-btn.offsetHeight));
   btn.style.left=x+'px';btn.style.top=y+'px';
   btn.style.right='';btn.style.bottom='';
  });
