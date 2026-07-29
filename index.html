@@ -919,9 +919,7 @@ const poems=[
  '落霞与孤鹜齐飞，秋水共长天一色。——王勃《滕王阁序》',
 ];
 (function(){
- const n=new Date();
- const dayKey=n.getFullYear()*10000+(n.getMonth()+1)*100+n.getDate();
- const idx=dayKey%poems.length;
+ const idx=Math.floor(Math.random()*poems.length);
  $('poemText').textContent=poems[idx];
 })();
 
