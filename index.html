@@ -664,8 +664,9 @@ async function loadLogs(f){
   if(!logs.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;opacity:.5">暂无日志</td></tr>';$('recentText').textContent='暂无记录';return}
   logs.forEach(e=>{
    let t;try{t=new Date(e.created_at+'Z').toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})}catch(ex){t=e.created_at||'-'}
+   const showDetail=(e.action==='login'||e.action==='admin'||e.action==='register'||e.action==='logout')?'-':(e.detail||'-');
    const tr=document.createElement('tr');
-   tr.innerHTML='<td>'+t+'</td><td>'+e.username+'</td><td><span class="badge-log '+e.action+'">'+(am[e.action]||e.action)+'</span></td><td><span class="ip-tag">'+(e.ip||'-')+'</span></td><td style="font-size:.82rem;color:var(--text3);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(e.detail||'')+'">'+(e.detail||'-')+'</td>';
+   tr.innerHTML='<td>'+t+'</td><td>'+e.username+'</td><td><span class="badge-log '+e.action+'">'+(am[e.action]||e.action)+'</span></td><td><span class="ip-tag">'+(e.ip||'-')+'</span></td><td style="font-size:.82rem;color:var(--text3);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(e.detail||'')+'">'+showDetail+'</td>';
    tb.appendChild(tr);
   });
   $('recentText').textContent='最近: '+logs.slice(0,3).map(e=>e.username+' ('+(am[e.action]||e.action)+')').join('; ');
