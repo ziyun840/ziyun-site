@@ -898,11 +898,10 @@ $('badgeClick').onclick=function(){
   isDragging=true;dragStarted=false;
   offX=e.clientX-fixedX;
   offY=e.clientY-fixedY;
-  btn.setPointerCapture(e.pointerId);
   btn.style.cursor='grabbing';
   e.preventDefault();
  });
- btn.addEventListener('pointermove',function(e){
+ document.addEventListener('pointermove',function(e){
   if(!isDragging)return;
   dragStarted=true;
   let x=e.clientX-offX,y=e.clientY-offY;
@@ -911,12 +910,17 @@ $('badgeClick').onclick=function(){
   y=Math.max(0,Math.min(y,window.innerHeight-btn.offsetHeight));
   fixedX=x;fixedY=y;syncPos();
  });
- btn.addEventListener('pointerup',function(e){
+ document.addEventListener('pointerup',function(){
   if(!isDragging)return;
   isDragging=false;
   btn.style.cursor='grab';
   if(dragStarted){
    localStorage.setItem('zy-exit-pos',JSON.stringify({x:fixedX,y:fixedY}));
+  }else{
+   // 纯点击（未拖拽）→ 退出面板
+   document.getElementById('adminPanel').classList.remove('active');
+   document.getElementById('normalView').style.display='grid';
+   status('👤 返回','fa-arrow-left','#1f5a7a');
   }
  });
  btn.addEventListener('pointercancel',function(){
@@ -930,13 +934,7 @@ $('badgeClick').onclick=function(){
   btn.classList.toggle('show',active);
   if(active){syncPos()}
  }).observe(document.getElementById('adminPanel'),{attributes:true,attributeFilter:['class']});
- // 点击返回（拖拽过则不触发）
- btn.addEventListener('click',function(e){
-  if(dragStarted){dragStarted=false;return}
-  document.getElementById('adminPanel').classList.remove('active');
-  document.getElementById('normalView').style.display='grid';
-  status('👤 返回','fa-arrow-left','#1f5a7a');
- });
+ // 点击返回已在 pointerup 中处理
 })();
 $('refreshBtn').onclick=function(){if(user&&user.role==='admin'){loadAdmin();toast('🔄 已刷新','fa-sync',1500)}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
 $('clearLogsBtn').onclick=function(){if(user&&user.role==='admin'){clearLogs()}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
