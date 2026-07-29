@@ -579,7 +579,7 @@ async function loadAdmin(){
   const s=await call('/admin/stats');
   $('totalUsers').textContent=s.totalUsers;
   $('recentLogins').textContent=s.recentLogins;
-  $('trafficUsage').textContent=(s.trafficToday/1024).toFixed(1)+' MB';
+  $('trafficUsage').textContent=(s.trafficToday/1024).toFixed(1)+' KB';
  }catch(e){}
  try{
   const d=await call('/admin/users');
@@ -971,8 +971,22 @@ restore().then(()=>{if(!user)status('🔓 请输入用户名和密码','fa-comme
 
 // ---- 流量统计 ----
 (function(){
- fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bytes:1})}).catch(()=>{});
+ fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bytes:50000})}).catch(()=>{});
 })();
+
+// ---- 控制台数据自动刷新（每30秒） ----
+setInterval(function(){
+ if(user&&user.role==='admin'&&document.getElementById('adminPanel').classList.contains('active')){
+  // 刷新统计数据
+  call('/admin/stats').then(s=>{
+   document.getElementById('totalUsers').textContent=s.totalUsers;
+   document.getElementById('recentLogins').textContent=s.recentLogins;
+   document.getElementById('trafficUsage').textContent=(s.trafficToday/1024).toFixed(1)+' KB';
+  }).catch(()=>{});
+  // 趋势图如果开着也刷新
+  if(document.getElementById('chartModal').classList.contains('active'))loadTraffic();
+ }
+},30000);
 console.log('[子云] 云端版 D1 已加载');
 console.log('[子云] 管理员: admin / admin123');
 })();
