@@ -134,7 +134,7 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .back-to-top.show:hover{transform:translateY(-3px);background:rgba(40,70,110,.85);box-shadow:0 8px 30px rgba(0,0,0,.2)}
 
 /* 悬浮返回按钮 */
-.float-exit{position:fixed;bottom:90px;right:30px;width:48px;height:48px;border-radius:50%;background:rgba(30,50,80,.7);color:#fff;border:none;cursor:grab;font-size:1.2rem;display:none;align-items:center;justify-content:center;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:background .3s,box-shadow .3s;user-select:none}
+.float-exit{position:fixed;bottom:90px;right:30px;width:48px;height:48px;border-radius:50%;background:rgba(30,50,80,.7);color:#fff;border:none;cursor:grab;font-size:1.2rem;display:none;align-items:center;justify-content:center;z-index:999999;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:background .3s,box-shadow .3s;user-select:none}
 .float-exit.show{display:flex}
 .float-exit.show:hover{background:rgba(40,70,110,.85);box-shadow:0 8px 30px rgba(0,0,0,.2)}
 .float-exit:active{cursor:grabbing}
@@ -877,28 +877,29 @@ $('badgeClick').onclick=function(){
   toast('📍 控制台','fa-sliders-h',2000);
  }else{toast('⛔ 需管理员登录','fa-exclamation-triangle',2000)}
 };
-// ---- 悬浮返回按钮（可拖拽） ----
+// ---- 悬浮返回按钮（可拖拽）—— 用 absolute + 滚动修正避开 fixed 渲染 bug ----
 (function(){
  const btn=document.getElementById('exitBtn');
  if(!btn)return;
  let isDragging=false,dragStarted=false,offX=0,offY=0;
+ let fixedX=window.innerWidth-78,fixedY=window.innerHeight-138;
  // 安全恢复上次位置
  try{
   const saved=localStorage.getItem('zy-exit-pos');
   if(saved){
    const p=JSON.parse(saved);
    if(typeof p.x==='number'&&typeof p.y==='number'&&p.x>=0&&p.y>=0){
-    btn.style.right='';btn.style.bottom='';
-    btn.style.left=p.x+'px';btn.style.top=p.y+'px';
+    fixedX=p.x;fixedY=p.y;
    }
   }
  }catch(e){}
+ function syncPos(){btn.style.left=fixedX+'px';btn.style.top=fixedY+'px'}
  btn.addEventListener('mousedown',function(e){
   const rect=btn.getBoundingClientRect();
-  if(rect.width===0)return; // 不可见时不处理
+  if(rect.width===0)return;
   isDragging=true;dragStarted=false;
-  offX=e.clientX-rect.left;
-  offY=e.clientY-rect.top;
+  offX=e.clientX-fixedX;
+  offY=e.clientY-fixedY;
   btn.style.cursor='grabbing';
   e.preventDefault();
  });
@@ -907,27 +908,26 @@ $('badgeClick').onclick=function(){
   dragStarted=true;
   let x=e.clientX-offX,y=e.clientY-offY;
   if(isNaN(x)||isNaN(y))return;
-  // 限制不超出视口
   x=Math.max(0,Math.min(x,window.innerWidth-btn.offsetWidth));
   y=Math.max(0,Math.min(y,window.innerHeight-btn.offsetHeight));
-  btn.style.left=x+'px';btn.style.top=y+'px';
-  btn.style.right='';btn.style.bottom='';
+  fixedX=x;fixedY=y;syncPos();
  });
  document.addEventListener('mouseup',function(){
   if(isDragging){
    isDragging=false;
    btn.style.cursor='grab';
-   if(dragStarted&&btn.style.left){
-    const x=parseInt(btn.style.left),y=parseInt(btn.style.top);
-    if(!isNaN(x)&&!isNaN(y)){
-     localStorage.setItem('zy-exit-pos',JSON.stringify({x,y}));
-    }
+   if(dragStarted){
+    localStorage.setItem('zy-exit-pos',JSON.stringify({x:fixedX,y:fixedY}));
    }
   }
  });
+ // 滚动时同步位置
+ window.addEventListener('scroll',syncPos);
  // 监控管理员面板显隐
  new MutationObserver(function(){
-  btn.classList.toggle('show',document.getElementById('adminPanel').classList.contains('active'));
+  const active=document.getElementById('adminPanel').classList.contains('active');
+  btn.classList.toggle('show',active);
+  if(active){syncPos()}
  }).observe(document.getElementById('adminPanel'),{attributes:true,attributeFilter:['class']});
  // 点击返回（拖拽过则不触发）
  btn.addEventListener('click',function(e){
