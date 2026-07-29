@@ -644,6 +644,16 @@ function toggleDlItem(i){
  if(dlData[i]){
   dlData[i].enabled=!dlData[i].enabled;
   renderDlAdmin();
+  // 立即自动保存到服务端
+  const items=[];
+  dlData.forEach((item,j)=>{
+   const n=$('dlName'+j);const u=$('dlUrl'+j);
+   if(n)items.push({name:n.value,url:u?u.value:'#',enabled:item.enabled!==false});
+  });
+  call('/admin/downloads',{method:'PUT',body:JSON.stringify({items})}).then(()=>{
+   toast('🔘 已'+(dlData[i].enabled?'启用':'禁用')+'：'+dlData[i].name,'fa-toggle-on',1500);
+   loadDownloads(true);
+  }).catch(e=>toast('❌ 保存失败: '+e.message,'fa-times-circle',2000));
  }
 }
 function removeDlItem(i){dlData.splice(i,1);renderDlAdmin()}
