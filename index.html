@@ -132,6 +132,12 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .back-to-top{position:fixed;bottom:30px;right:30px;width:48px;height:48px;border-radius:50%;background:rgba(30,50,80,.7);color:#fff;border:none;cursor:pointer;font-size:1.2rem;display:none;align-items:center;justify-content:center;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:all .3s ease}
 .back-to-top.show{display:flex}
 .back-to-top.show:hover{transform:translateY(-3px);background:rgba(40,70,110,.85);box-shadow:0 8px 30px rgba(0,0,0,.2)}
+
+/* 悬浮返回按钮 */
+.float-exit{position:fixed;bottom:90px;right:30px;width:48px;height:48px;border-radius:50%;background:rgba(30,50,80,.7);color:#fff;border:none;cursor:grab;font-size:1.2rem;display:none;align-items:center;justify-content:center;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:all .3s ease;user-select:none}
+.float-exit.show{display:flex}
+.float-exit.show:hover{transform:translateY(-3px);background:rgba(40,70,110,.85);box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.float-exit:active{cursor:grabbing}
 .poem-bar{animation:fadeUp .6s ease-out .3s both}
 .info-strip{animation:fadeUp .6s ease-out .4s both}
 @media(max-width:820px){.glass-card{padding:1.5rem 1.2rem;border-radius:40px}.grid-2col{grid-template-columns:1fr;gap:2.2rem}.brand h1{font-size:1.8rem}}@media(max-width:600px){.glass-card{padding:1.2rem 1rem;border-radius:32px}.brand h1{font-size:1.5rem}.brand h1 i{font-size:1.5rem}.dl-section,.ac-section{padding:1.2rem}}
@@ -185,7 +191,7 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
   </div>
  </div>
  <div class="admin-panel" id="adminPanel">
-  <h3 style="display:flex;align-items:center;justify-content:space-between"><span><i class="fas fa-sliders-h"></i> 管理员控制面板</span><button class="btn-sm btn-o" id="exitBtn" style="display:inline-flex;align-items:center;gap:6px"><i class="fas fa-arrow-left"></i> 返回</button></h3>
+  <h3><i class="fas fa-sliders-h"></i> 管理员控制面板</h3>
   <div class="admin-stats">
    <div class="stat-card" id="statUsers"></div>
    <div class="stat-card" id="statOps"></div>
@@ -245,6 +251,7 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
  <div class="footer-note"><i class="fas fa-shield-alt"></i> 子云专属 · D1云端版</div>
  <div class="poem-bar" id="poemBar"><i class="fas fa-feather-alt"></i> <span id="poemText"></span></div>
 </div>
+<button class="float-exit" id="exitBtn" title="返回主页面"><i class="fas fa-arrow-left"></i></button>
 <button class="back-to-top" id="backTop"><i class="fas fa-arrow-up"></i></button>
 <div class="toast-message" id="toastMsg"><i class="fas fa-info-circle"></i> <span id="toastText">提示</span></div>
 <div class="chart-modal" id="chartModal">
@@ -865,10 +872,43 @@ $('badgeClick').onclick=function(){
   toast('📍 控制台','fa-sliders-h',2000);
  }else{toast('⛔ 需管理员登录','fa-exclamation-triangle',2000)}
 };
-$('exitBtn').onclick=function(){
- $('adminPanel').classList.remove('active');$('normalView').style.display='grid';
- status('👤 返回','fa-arrow-left','#1f5a7a');
-};
+// ---- 悬浮返回按钮（可拖拽） ----
+(function(){
+ const btn=document.getElementById('exitBtn');
+ let isDragging=false,offX=0,offY=0;
+ // 从 localStorage 恢复位置
+ const saved=localStorage.getItem('zy-exit-pos');
+ if(saved){const p=JSON.parse(saved);btn.style.right='';btn.style.bottom='';btn.style.left=p.x+'px';btn.style.top=p.y+'px'}
+ btn.onmousedown=function(e){
+  isDragging=true;
+  offX=e.clientX-btn.offsetLeft;
+  offY=e.clientY-btn.offsetTop;
+  this.style.cursor='grabbing';
+  e.preventDefault();
+ };
+ document.onmousemove=function(e){
+  if(!isDragging)return;
+  btn.style.left=(e.clientX-offX)+'px';
+  btn.style.top=(e.clientY-offY)+'px';
+  btn.style.right='';btn.style.bottom='';
+ };
+ document.onmouseup=function(){
+  if(isDragging){
+   isDragging=false;
+   btn.style.cursor='grab';
+   localStorage.setItem('zy-exit-pos',JSON.stringify({x:btn.offsetLeft,y:btn.offsetTop}));
+  }
+ };
+ // 监控管理员面板显隐
+ new MutationObserver(function(){
+  btn.classList.toggle('show',document.getElementById('adminPanel').classList.contains('active'));
+ }).observe(document.getElementById('adminPanel'),{attributes:true,attributeFilter:['class']});
+ // 点击返回
+ $('exitBtn').onclick=function(){
+  $('adminPanel').classList.remove('active');$('normalView').style.display='grid';
+  status('👤 返回','fa-arrow-left','#1f5a7a');
+ };
+})();
 $('refreshBtn').onclick=function(){if(user&&user.role==='admin'){loadAdmin();toast('🔄 已刷新','fa-sync',1500)}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
 $('clearLogsBtn').onclick=function(){if(user&&user.role==='admin'){clearLogs()}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
 $('logSearch').oninput=function(){const af=document.querySelector('#logFilters .filter-btn.active');loadLogs(af?af.dataset.fl:'all')};
