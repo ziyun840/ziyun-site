@@ -226,7 +226,7 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
   <button class="btn btn-o" id="dlAddBtn" style="margin-bottom:.6rem"><i class="fas fa-plus"></i> 添加下载项</button>
   <button class="btn btn-p" id="dlSaveBtn" style="margin-bottom:1rem"><i class="fas fa-save"></i> 保存全部</button>
   <hr style="border:none;border-top:1px solid var(--card-border);margin:.8rem 0">
-  <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th></tr></thead><tbody id="logBody"></tbody></table></div>
+  <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th><th>详情</th></tr></thead><tbody id="logBody"></tbody></table></div>
   <div style="margin-top:10px;display:flex;gap:12px;align-items:center">
    <div class="recent-log" style="margin-top:0;flex:1"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
    <button class="btn-sm danger" id="clearLogsBtn" style="flex-shrink:0;white-space:nowrap"><i class="fas fa-trash-alt"></i> 清空日志</button>
@@ -660,12 +660,12 @@ async function loadLogs(f){
   const am={login:'登录',logout:'退出',register:'注册',download:'下载',admin:'管理',delete:'删除',update:'修改'};
   let logs=d.logs||[];
   const s=$('logSearch').value.trim();
-  if(s)logs=logs.filter(e=>e.username.includes(s)||(e.ip||'').includes(s));
-  if(!logs.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:2rem;opacity:.5">暂无日志</td></tr>';$('recentText').textContent='暂无记录';return}
+  if(s)logs=logs.filter(e=>e.username.includes(s)||(e.ip||'').includes(s)||(e.detail||'').includes(s));
+  if(!logs.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;opacity:.5">暂无日志</td></tr>';$('recentText').textContent='暂无记录';return}
   logs.forEach(e=>{
    let t;try{t=new Date(e.created_at+'Z').toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})}catch(ex){t=e.created_at||'-'}
    const tr=document.createElement('tr');
-   tr.innerHTML='<td>'+t+'</td><td>'+e.username+'</td><td><span class="badge-log '+e.action+'">'+(am[e.action]||e.action)+'</span></td><td><span class="ip-tag">'+(e.ip||'-')+'</span></td>';
+   tr.innerHTML='<td>'+t+'</td><td>'+e.username+'</td><td><span class="badge-log '+e.action+'">'+(am[e.action]||e.action)+'</span></td><td><span class="ip-tag">'+(e.ip||'-')+'</span></td><td style="font-size:.82rem;color:var(--text3);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(e.detail||'')+'">'+(e.detail||'-')+'</td>';
    tb.appendChild(tr);
   });
   $('recentText').textContent='最近: '+logs.slice(0,3).map(e=>e.username+' ('+(am[e.action]||e.action)+')').join('; ');
