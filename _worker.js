@@ -120,6 +120,12 @@ export default {
       return row && row.password_hash === password;
     }
 
+    async function ensureDownloadsEnabledColumn() {
+      try {
+        await env.DB.prepare("ALTER TABLE downloads ADD COLUMN enabled INTEGER DEFAULT 1").run();
+      } catch(e) {}
+    }
+
     try {
       // === 注册 ===
       if (path === '/api/register' && method === 'POST') {
@@ -294,9 +300,19 @@ export default {
         return json({ traffic: data });
       }
 
-      // === 获取下载链接 ===
+      // === 获取下载链接（仅启用的） ===
       if (path === '/api/downloads' && method === 'GET') {
-        const { results } = await env.DB.prepare('SELECT id, name, url FROM downloads ORDER BY sort_order ASC, id ASC').all();
+        await ensureDownloadsEnabledColumn();
+        const { results } = await env.DB.prepare('SELECT id, name, url, enabled FROM downloads WHERE enabled = 1 OR enabled IS NULL ORDER BY sort_order ASC, id ASC').all();
+        return json({ downloads: results });
+      }
+
+      // === 管理员获取所有下载链接 ===
+      if (path === '/api/admin/downloads' && method === 'GET') {
+        const u = await getUser();
+        if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
+        await ensureDownloadsEnabledColumn();
+        const { results } = await env.DB.prepare('SELECT id, name, url, enabled FROM downloads ORDER BY sort_order ASC, id ASC').all();
         return json({ downloads: results });
       }
 
@@ -306,10 +322,12 @@ export default {
         if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
         const { items } = body;
         if (!items || !Array.isArray(items)) return json({ error: '参数错误' }, 400);
+        await ensureDownloadsEnabledColumn();
         await env.DB.prepare('DELETE FROM downloads').run();
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
-          await env.DB.prepare('INSERT INTO downloads (name, url, sort_order) VALUES (?,?,?)').bind(item.name || '未命名', item.url || '#', i).run();
+          const enabled = item.enabled === undefined ? 1 : (item.enabled ? 1 : 0);
+          await env.DB.prepare('INSERT INTO downloads (name, url, sort_order, enabled) VALUES (?,?,?,?)').bind(item.name || '未命名', item.url || '#', i, enabled).run();
         }
         await log(u, 'update', '更新下载链接');
         return json({ success: true });

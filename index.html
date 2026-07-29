@@ -313,6 +313,14 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .bg-preview.solid{border:1px solid rgba(255,255,255,.08)}
 .bg-label{font-size:.7rem;color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bg-section-label{font-size:.75rem;color:var(--text4);padding:6px 4px 4px;border-top:1px solid rgba(255,255,255,.08);margin-top:4px}
+
+/* Toggle 开关 */
+.toggle-switch{position:relative;display:inline-block;width:36px;height:20px;cursor:pointer}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:rgba(180,60,60,.35);border-radius:20px;transition:.3s}
+.toggle-slider::before{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.toggle-switch input:checked+.toggle-slider{background:rgba(42,122,74,.5)}
+.toggle-switch input:checked+.toggle-slider::before{transform:translateX(16px)}
 </style>
 <script>
 (function(){
@@ -402,19 +410,24 @@ async function logout(){
 
 // ---- 下载 ----
 let dlData=[];
-async function loadDownloads(){
+async function loadDownloads(adminMode){
  try{
-  const d=await call('/downloads');
+  const ep=adminMode?'/admin/downloads':'/downloads';
+  const d=await call(ep);
   dlData=d.downloads||[];
   const list=$('downloadList');list.innerHTML='';
   const icons=['fa-file-archive','fa-code','fa-mobile-alt','fa-cloud','fa-tools','fa-link','fa-cog','fa-star'];
   dlData.forEach((item,i)=>{
    const icon=icons[i%icons.length];
    const hasUrl=item.url&&item.url!=='#';
-   list.innerHTML+='<div class="dl-item"><div class="dl-info"><i class="fas '+icon+'"></i><span>'+item.name+'</span></div><a href="'+(hasUrl?item.url:'#')+'" class="dl-link" target="'+(hasUrl?'_blank':'_self')+'" data-url="'+(item.url||'')+'"><i class="fas fa-external-link-alt"></i> 下载</a></div>';
+   const enabled=item.enabled===undefined||item.enabled===1||item.enabled===true;
+   const disabledCls=enabled?'':' style="opacity:.45;pointer-events:none"';
+   const badge=enabled?'':' <span style="font-size:.7rem;background:rgba(180,60,60,.15);color:var(--red);padding:2px 10px;border-radius:40px;margin-left:6px">已禁用</span>';
+   list.innerHTML+='<div class="dl-item"'+disabledCls+'><div class="dl-info"><i class="fas '+icon+'"></i><span>'+item.name+badge+'</span></div><a href="'+(hasUrl&&enabled?item.url:'#')+'" class="dl-link" target="'+(hasUrl&&enabled?'_blank':'_self')+'" data-url="'+(item.url||'')+'" data-enabled="'+enabled+'"><i class="fas fa-external-link-alt"></i> '+(enabled?'下载':'已禁用')+'</a></div>';
   });
   document.querySelectorAll('.dl-link').forEach(l=>{
    l.addEventListener('click',function(e){
+    if(this.dataset.enabled==='false'){e.preventDefault();toast('⛔ 该下载已禁用','fa-ban',2000);return}
     const url=this.dataset.url;
     if(!url||url==='#'){e.preventDefault();toast('❌ 链接待配置','fa-exclamation-triangle',2000);return}
     if(!user){e.preventDefault();toast('🔒 请先登录','fa-lock',3000);return}
@@ -567,7 +580,7 @@ async function loadAdmin(){
    tb.appendChild(tr);
   });
  }catch(e){}
- try{await loadDownloads()}catch(e){}
+ try{await loadDownloads(true)}catch(e){}
  renderDlAdmin();
  loadLogs();
 }
@@ -623,21 +636,28 @@ async function loadLogs(f){
 function renderDlAdmin(){
  const wrap=$('dlAdminWrap');wrap.innerHTML='';
  dlData.forEach((item,i)=>{
-  wrap.innerHTML+='<div class="dl-item" style="margin-bottom:8px" data-idx="'+i+'"><div class="dl-info" style="flex:1;gap:8px"><input class="edit-input" id="dlName'+i+'" value="'+item.name.replace(/"/g,'&quot;')+'" placeholder="名称" style="max-width:200px"><input class="edit-input" id="dlUrl'+i+'" value="'+item.url.replace(/"/g,'&quot;')+'" placeholder="链接URL" style="flex:1;min-width:200px"></div><button class="btn-sm danger" onclick="removeDlItem('+i+')"><i class="fas fa-times"></i></button></div>';
+  const enabled=item.enabled===undefined||item.enabled===1||item.enabled===true;
+  wrap.innerHTML+='<div class="dl-item" style="margin-bottom:8px;'+(enabled?'':'opacity:.45')+'" data-idx="'+i+'"><div class="dl-info" style="flex:1;gap:8px"><input class="edit-input" id="dlName'+i+'" value="'+item.name.replace(/"/g,'&quot;')+'" placeholder="名称" style="max-width:180px"><input class="edit-input" id="dlUrl'+i+'" value="'+item.url.replace(/"/g,'&quot;')+'" placeholder="链接URL" style="flex:1;min-width:180px"></div><div style="display:flex;align-items:center;gap:8px"><label class="toggle-switch" title="'+(enabled?'点击禁用':'点击启用')+'"><input type="checkbox" id="dlToggle'+i+'" '+(enabled?'checked':'')+' onchange="toggleDlItem('+i+')"><span class="toggle-slider"></span></label><button class="btn-sm danger" onclick="removeDlItem('+i+')"><i class="fas fa-times"></i></button></div></div>';
  });
 }
+function toggleDlItem(i){
+ if(dlData[i]){
+  dlData[i].enabled=!dlData[i].enabled;
+  renderDlAdmin();
+ }
+}
 function removeDlItem(i){dlData.splice(i,1);renderDlAdmin()}
-$('dlAddBtn').onclick=function(){dlData.push({name:'新项目',url:'#'});renderDlAdmin()};
+$('dlAddBtn').onclick=function(){dlData.push({name:'新项目',url:'#',enabled:true});renderDlAdmin()};
 $('dlSaveBtn').onclick=async function(){
  const items=[];
- dlData.forEach((_,i)=>{
+ dlData.forEach((item,i)=>{
   const n=$('dlName'+i);const u=$('dlUrl'+i);
-  if(n)items.push({name:n.value,url:u?u.value:'#'});
+  if(n)items.push({name:n.value,url:u?u.value:'#',enabled:item.enabled!==false});
  });
  try{
   await call('/admin/downloads',{method:'PUT',body:JSON.stringify({items})});
   toast('✅ 下载链接已保存','fa-check-circle',2000);
-  loadDownloads();
+  loadDownloads(true);
  }catch(e){toast('❌ '+e.message,'fa-times-circle',2000)}
 };
 
