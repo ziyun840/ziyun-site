@@ -968,6 +968,11 @@ const poems=[
 
 // ---- 初始化 ----
 restore().then(()=>{if(!user)status('🔓 请输入用户名和密码','fa-comment-dots','#4d6a8a')});
+
+// ---- 流量统计 ----
+(function(){
+ fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bytes:1})}).catch(()=>{});
+})();
 console.log('[子云] 云端版 D1 已加载');
 console.log('[子云] 管理员: admin / admin123');
 })();
