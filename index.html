@@ -379,6 +379,7 @@ function status(m,i,c){
 async function login(){
  const u=$('userInput').value.trim(),p=$('passInput').value.trim();
  if(!u||!p){status('⚠️ 请输入','fa-exclamation-triangle','#b5653b');return}
+ if(user){status('⚠️ 请先退出当前账号再进行登录','fa-exclamation-triangle','#b5653b');toast('⚠️ 请先退出再登录','fa-exclamation-triangle',2500);return}
  try{
   const d=await call('/login',{method:'POST',body:JSON.stringify({username:u,password:p})});
   token=d.token;localStorage.setItem('zy-t',token);
