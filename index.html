@@ -95,12 +95,10 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .admin-panel h3{font-weight:500;font-size:1.6rem;color:var(--text2);display:flex;align-items:center;gap:14px;margin-bottom:1.8rem;border-bottom:1px dashed rgba(255,255,255,.2);padding-bottom:.8rem}
 .admin-panel h3 i{color:var(--gold)}
 .admin-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:2rem}
-.stat-card{background:var(--sec-bg);border-radius:28px;padding:1rem .5rem .8rem;border:1px solid var(--card-border);text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
-.ring-wrap{position:relative;width:72px;height:72px}
-.ring-wrap svg{width:72px;height:72px}
-.ring-wrap .ring-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1.3rem;color:var(--accent);display:none}
-.ring-wrap .ring-num{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:1rem;font-weight:600;color:var(--text1);white-space:nowrap}
-.stat-card .lbl{font-size:.7rem;color:var(--text3);opacity:.8;margin-top:2px}
+.stat-card{background:var(--sec-bg);border-radius:24px;padding:.8rem 1rem;border:1px solid var(--card-border);text-align:center}
+.stat-card i{font-size:1.6rem;color:var(--accent);display:block;margin-bottom:2px}
+.stat-card .num{font-size:1.6rem;font-weight:500;color:var(--text1)}
+.stat-card .lbl{font-size:.7rem;color:var(--text3);opacity:.8}
 .admin-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:1.2rem;align-items:center}
 .search-box{flex:1;min-width:180px;display:flex;align-items:center;background:var(--inp-bg);border:1px solid var(--inp-bd);border-radius:60px;padding:0 18px}
 .search-box input{flex:1;background:transparent;border:none;padding:10px 0;font-size:.9rem;color:var(--text1);outline:none}
@@ -186,9 +184,9 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
  <div class="admin-panel" id="adminPanel">
   <h3><i class="fas fa-sliders-h"></i> 管理员控制面板</h3>
   <div class="admin-stats">
-   <div class="stat-card" id="statUsers"><div class="ring-wrap" id="ringUsers"></div><div class="lbl">总账户</div></div>
-   <div class="stat-card" id="statOps"><div class="ring-wrap" id="ringOps"></div><div class="lbl">24h操作</div></div>
-   <div class="stat-card" id="statTraffic"><div class="ring-wrap" id="ringTraffic"></div><div class="lbl">今日流量</div></div>
+   <div class="stat-card"><i class="fas fa-users"></i><div class="num" id="totalUsers">0</div><div class="lbl">总账户</div></div>
+   <div class="stat-card"><i class="fas fa-user-check"></i><div class="num" id="recentLogins">0</div><div class="lbl">24h操作</div></div>
+   <div class="stat-card"><i class="fas fa-tachometer-alt"></i><div class="num" id="trafficUsage">0</div><div class="lbl">今日流量</div></div>
   </div>
   <div class="admin-toolbar">
    <div class="search-box"><i class="fas fa-search"></i><input type="text" id="logSearch" placeholder="搜索..."></div>
@@ -575,20 +573,14 @@ setInterval(()=>{
 // ---- 管理员面板 ----
 let selectedUser=null;
 // ---- 环形统计卡片 ----
-function renderRingStat(el,label,color){
- const r=30,c=2*Math.PI*r,fill=0.82;
- el.innerHTML='<svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="'+r+'" fill="none" stroke="rgba(128,128,128,.08)" stroke-width="5"/><circle cx="36" cy="36" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="5" stroke-dasharray="'+c+'" stroke-dashoffset="'+(c*(1-fill))+'" stroke-linecap="round" transform="rotate(-90,36,36)" style="opacity:.5"/><text x="36" y="36" text-anchor="middle" dominant-baseline="central" fill="var(--text1)" font-size="'+(String(label).length>5?'12':'15')+'" font-weight="600">'+label+'</text></svg>';
-}
-
 let usersData=[];
 async function loadAdmin(){
  if(!user||user.role!=='admin')return;
  try{
   const s=await call('/admin/stats');
-  renderRingStat($('ringUsers'),String(s.totalUsers),'var(--accent)');
-  renderRingStat($('ringOps'),String(s.recentLogins),'var(--green)');
-  const kb=(s.trafficToday/1024).toFixed(1);
-  renderRingStat($('ringTraffic'),kb+'K','var(--gold)');
+  $('totalUsers').textContent=s.totalUsers;
+  $('recentLogins').textContent=s.recentLogins;
+  $('trafficUsage').textContent=(s.trafficToday/1024).toFixed(1)+' KB';
  }catch(e){}
  try{
   const d=await call('/admin/users');
@@ -988,10 +980,9 @@ setInterval(function(){
  if(user&&user.role==='admin'&&document.getElementById('adminPanel').classList.contains('active')){
   // 刷新统计数据
   call('/admin/stats').then(s=>{
-   renderRingStat(document.getElementById('ringUsers'),String(s.totalUsers),'var(--accent)');
-   renderRingStat(document.getElementById('ringOps'),String(s.recentLogins),'var(--green)');
-   const kb=(s.trafficToday/1024).toFixed(1);
-   renderRingStat(document.getElementById('ringTraffic'),kb+'K','var(--gold)');
+   document.getElementById('totalUsers').textContent=s.totalUsers;
+   document.getElementById('recentLogins').textContent=s.recentLogins;
+   document.getElementById('trafficUsage').textContent=(s.trafficToday/1024).toFixed(1)+' KB';
   }).catch(()=>{});
   // 趋势图如果开着也刷新
   if(document.getElementById('chartModal').classList.contains('active'))loadTraffic();
