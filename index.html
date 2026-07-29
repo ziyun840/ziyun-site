@@ -20,14 +20,17 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,180,255,.008) 2px,rgba(0,180,255,.008) 4px);pointer-events:none;z-index:0}
 body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(0,100,255,.08),transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(100,0,200,.06),transparent 50%),radial-gradient(ellipse at 20% 80%,rgba(0,200,255,.04),transparent 50%),var(--bg-start);background-size:200% 200%;animation:bgShift 12s ease infinite;display:flex;justify-content:center;align-items:flex-start;padding:20px;color:var(--text1);position:relative;overflow-x:auto;padding-top:30px;padding-bottom:30px}
 @keyframes bgShift{0%{background-position:0% 50%}25%{background-position:100% 0%}50%{background-position:50% 100%}75%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes glitchText{0%,90%,100%{clip-path:inset(0 0 0 0)}92%{clip-path:inset(20% 0 60% 0)}94%{clip-path:inset(40% 0 30% 0)}96%{clip-path:inset(10% 0 70% 0)}98%{clip-path:inset(50% 0 10% 0)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(30px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 .glass-card{max-width:1300px;width:100%;background:var(--card-bg);-webkit-backdrop-filter:blur(20px) saturate(200%);backdrop-filter:blur(20px) saturate(200%);border-radius:56px;padding:2.2rem 2.5rem;box-shadow:0 8px 32px var(--shadow),0 0 60px var(--glow),inset 0 1px 0 rgba(0,180,255,.08);border:1px solid var(--card-border);position:relative;z-index:1;animation:fadeUp .7s ease-out;transition:box-shadow .5s ease;transform:translateZ(0)}
 .glass-card:hover{box-shadow:0 12px 48px var(--shadow),0 0 80px var(--glow)}
-.glass-card::before{content:'';position:absolute;inset:-1px;border-radius:57px;background:linear-gradient(135deg,var(--grad1),transparent 40%,transparent 60%,var(--grad2));opacity:.35;transition:opacity .5s;z-index:-1;mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);mask-composite:exclude;-webkit-mask-composite:source-out;padding:1.5px}
+.glass-card::before{content:'';position:absolute;inset:-1.5px;border-radius:57px;background:linear-gradient(135deg,var(--grad1),transparent 40%,transparent 60%,var(--grad2));opacity:.35;transition:opacity .5s;z-index:-1;mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);mask-composite:exclude;-webkit-mask-composite:source-out;padding:1.5px;animation:borderRotate 4s linear infinite}
+@keyframes borderRotate{0%{filter:hue-rotate(0deg)}100%{filter:hue-rotate(360deg)}}
 .glass-card:hover::before{opacity:.7}
-.glass-card::after{content:'';position:absolute;top:-1px;left:30%;right:30%;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.4;border-radius:50%}
+.glass-card::after{content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.5;border-radius:50%;animation:topGlow 3s ease-in-out infinite}
 .brand{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px 20px;margin-bottom:1.2rem;border-bottom:1px solid rgba(255,255,255,.2);padding-bottom:1rem}
-.brand h1{font-weight:700;font-size:2.4rem;letter-spacing:3px;color:var(--text1);display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#00bfff,#8888ff,#ff66cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:0 0 40px rgba(0,180,255,.2)}
+.brand h1{font-weight:700;font-size:2.4rem;letter-spacing:3px;color:var(--text1);display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#00bfff,#8888ff,#ff66cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:0 0 40px rgba(0,180,255,.2);position:relative}
+.brand h1::after{content:attr(data-text);position:absolute;left:0;top:0;background:linear-gradient(135deg,#00bfff,#8888ff,#ff66cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;width:100%;height:100%;animation:glitchText 5s infinite;opacity:.3;clip-path:inset(0 0 0 0)}
 .brand h1 i{-webkit-text-fill-color:var(--accent);color:var(--accent);font-size:2rem}
 .theme-wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:relative}
 .theme-btn{width:44px;height:24px;background:rgba(200,200,200,.3);border-radius:30px;border:none;cursor:pointer;padding:2px}
@@ -97,8 +100,8 @@ body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(0,100,25
 /* 管理员面板 */
 .admin-panel{display:none;margin-top:1.2rem;background:rgba(255,255,255,.2);border-radius:40px;padding:1.8rem 2rem;border:1px solid var(--card-border);animation:fadeUp .5s ease-out}
 .admin-panel.active{display:block}
-.admin-panel h3{font-weight:500;font-size:1.6rem;color:var(--text2);display:flex;align-items:center;gap:14px;margin-bottom:1.8rem;border-bottom:1px dashed rgba(255,255,255,.2);padding-bottom:.8rem}
-.admin-panel h3 i{color:var(--gold)}
+.admin-panel h3{font-weight:500;font-size:1.6rem;color:var(--text2);display:flex;align-items:center;gap:14px;margin-bottom:1.8rem;border-bottom:1px solid rgba(0,180,255,.12);padding-bottom:.8rem}
+.admin-panel h3 i{color:var(--accent);text-shadow:0 0 15px rgba(0,180,255,.3)}
 .admin-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:2rem}
 .stat-card{background:var(--sec-bg);border-radius:24px;padding:1rem 1.2rem .9rem;border:1px solid var(--card-border);display:flex;flex-direction:column;gap:3px;transition:border-color .3s,box-shadow .3s}
 .stat-card:hover{border-color:var(--accent);box-shadow:0 0 20px var(--glow)}
@@ -154,7 +157,7 @@ body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(0,100,25
 <canvas id="particleCanvas"></canvas>
 <div class="glass-card" id="app">
  <div class="brand">
-  <h1><i class="fas fa-cloud"></i> 子云专属网站</h1>
+  <h1 data-text="子云专属网站"><i class="fas fa-cloud"></i> 子云专属网站</h1>
   <div class="theme-wrap">
    <button class="theme-btn" id="themeToggle"><span class="dot" id="themeDot">🌙</span></button>
    <button class="bg-btn" id="bgBtn" title="切换背景"><i class="fas fa-palette"></i><span class="active-dot" id="bgActiveDot"></span></button>
@@ -1025,32 +1028,59 @@ const poems=[
  window.addEventListener('resize',resize);
  const count=Math.min(80,Math.floor(w*h/12000));
  for(let i=0;i<count;i++){
-  particles.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5,r:Math.random()*2.5+1});
+  particles.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5,r:Math.random()*2+1.5});
  }
- const isDark=()=>document.documentElement.getAttribute('data-theme')==='dark';
+ let frame=0;
  function draw(){
+  frame++;
   ctx.clearRect(0,0,w,h);
-  const alpha=isDark()?.12:.1;
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  // 中心脉冲波纹
+  const pulse=Math.sin(frame/40)*0.5+0.5;
+  const g=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w*0.4);
+  g.addColorStop(0,'rgba(0,200,255,'+pulse*0.08+')');
+  g.addColorStop(0.5,'rgba(100,50,255,'+pulse*0.04+')');
+  g.addColorStop(1,'rgba(0,200,255,0)');
+  ctx.fillStyle=g;
+  ctx.fillRect(0,0,w,h);
+  // 粒子
+  const alpha=isDark?.15:.1;
   for(let p of particles){
    p.x+=p.vx;p.y+=p.vy;
    if(p.x<0)p.x=w;if(p.x>w)p.x=0;
    if(p.y<0)p.y=h;if(p.y>h)p.y=0;
+   // 光晕
+   ctx.beginPath();
+   ctx.arc(p.x,p.y,p.r*3,0,Math.PI*2);
+   ctx.fillStyle='rgba(0,180,255,'+alpha*0.15+')';
+   ctx.fill();
+   // 核心
    ctx.beginPath();
    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-   ctx.fillStyle='rgba(100,160,255,'+alpha+')';
+   ctx.fillStyle='rgba(0,200,255,'+alpha+')';
    ctx.fill();
   }
+  // 连线 + 流动数据
   for(let i=0;i<particles.length;i++){
    for(let j=i+1;j<particles.length;j++){
     const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y;
     const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<150){
+    if(dist<200){
+     const frac=1-dist/200;
      ctx.beginPath();
      ctx.moveTo(particles[i].x,particles[i].y);
      ctx.lineTo(particles[j].x,particles[j].y);
-     ctx.strokeStyle='rgba(100,160,255,'+(alpha*(1-dist/150))+')';
-     ctx.lineWidth=.5;
+     ctx.strokeStyle='rgba(0,180,255,'+(alpha*frac*0.4)+')';
+     ctx.lineWidth=frac*0.8+0.2;
      ctx.stroke();
+     // 流动光点
+     if(frame%2===0&&frac>0.5&&Math.random()<0.01){
+      const t=Math.random();
+      ctx.beginPath();
+      ctx.arc(particles[i].x+dx*t,particles[i].y+dy*t,2,0,Math.PI*2);
+      ctx.fillStyle='rgba(0,255,200,0.6)';
+      ctx.fill();
+     }
     }
    }
   }
@@ -1061,6 +1091,25 @@ const poems=[
 
 // ---- 初始化 ----
 restore().then(()=>{if(!user)status('🔓 请输入用户名和密码','fa-comment-dots','#4d6a8a')});
+
+// ---- 浮动几何装饰 ----
+(function(){
+ const s=document.createElement('style');
+ s.textContent='@keyframes floatA{0%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-30px) rotate(180deg)}100%{transform:translateY(0) rotate(360deg)}}@keyframes floatB{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.1)}100%{transform:translateY(0) scale(1)}}@keyframes pulseGlow{0%{opacity:0.3}50%{opacity:0.7}100%{opacity:0.3}}';
+ document.head.appendChild(s);
+ const shapes=['+','×','◇','○','△','⟡'];
+ const pos=[
+  {l:5,t:20,sz:18,d:25},{l:92,t:10,sz:14,d:30},
+  {l:8,t:70,sz:12,d:20},{l:95,t:65,sz:16,d:35},
+  {l:50,t:5,sz:20,d:28},{l:50,t:90,sz:10,d:22}
+ ];
+ pos.forEach((p,i)=>{
+  const el=document.createElement('div');
+  el.textContent=shapes[i%shapes.length];
+  el.style.cssText='position:fixed;left:'+p.l+'%;top:'+p.t+'%;font-size:'+p.sz+'px;color:rgba(0,180,255,0.15);pointer-events:none;z-index:0;animation:floatA '+(p.d)+'s ease-in-out infinite;animation-delay:'+(i*3)+'s;opacity:0.3;font-weight:100';
+  document.body.appendChild(el);
+ });
+})();
 
 // ---- 流量统计 ----
 (function(){
