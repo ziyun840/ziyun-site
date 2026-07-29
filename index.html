@@ -95,10 +95,13 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .admin-panel h3{font-weight:500;font-size:1.6rem;color:var(--text2);display:flex;align-items:center;gap:14px;margin-bottom:1.8rem;border-bottom:1px dashed rgba(255,255,255,.2);padding-bottom:.8rem}
 .admin-panel h3 i{color:var(--gold)}
 .admin-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:2rem}
-.stat-card{background:var(--sec-bg);border-radius:24px;padding:.8rem 1rem;border:1px solid var(--card-border);text-align:center}
-.stat-card i{font-size:1.6rem;color:var(--accent);display:block;margin-bottom:2px}
-.stat-card .num{font-size:1.6rem;font-weight:500;color:var(--text1)}
-.stat-card .lbl{font-size:.7rem;color:var(--text3);opacity:.8}
+.stat-card{background:var(--sec-bg);border-radius:24px;padding:1rem 1.2rem .9rem;border:1px solid var(--card-border);display:flex;flex-direction:column;gap:3px}
+.stat-head{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--text3)}
+.stat-head i{font-size:.9rem;color:var(--accent);width:18px;text-align:center}
+.stat-value{font-size:1.5rem;font-weight:600;color:var(--text1);line-height:1.2}
+.stat-value small{font-size:.75rem;font-weight:400;color:var(--text3);margin-left:3px}
+.stat-bar{height:4px;background:rgba(128,128,128,.12);border-radius:4px;overflow:hidden;margin-top:2px}
+.stat-bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
 .admin-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:1.2rem;align-items:center}
 .search-box{flex:1;min-width:180px;display:flex;align-items:center;background:var(--inp-bg);border:1px solid var(--inp-bd);border-radius:60px;padding:0 18px}
 .search-box input{flex:1;background:transparent;border:none;padding:10px 0;font-size:.9rem;color:var(--text1);outline:none}
@@ -184,9 +187,9 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
  <div class="admin-panel" id="adminPanel">
   <h3><i class="fas fa-sliders-h"></i> 管理员控制面板</h3>
   <div class="admin-stats">
-   <div class="stat-card"><i class="fas fa-users"></i><div class="num" id="totalUsers">0</div><div class="lbl">总账户</div></div>
-   <div class="stat-card"><i class="fas fa-user-check"></i><div class="num" id="recentLogins">0</div><div class="lbl">24h操作</div></div>
-   <div class="stat-card"><i class="fas fa-tachometer-alt"></i><div class="num" id="trafficUsage">0</div><div class="lbl">今日流量</div></div>
+   <div class="stat-card" id="statUsers"></div>
+   <div class="stat-card" id="statOps"></div>
+   <div class="stat-card" id="statTraffic"></div>
   </div>
   <div class="admin-toolbar">
    <div class="search-box"><i class="fas fa-search"></i><input type="text" id="logSearch" placeholder="搜索..."></div>
@@ -572,15 +575,24 @@ setInterval(()=>{
 
 // ---- 管理员面板 ----
 let selectedUser=null;
-// ---- 环形统计卡片 ----
+// ---- 统计卡片渲染（带进度条） ----
+function updateStats(s){
+ const mk=function(el,icon,label,val,unit,max,color){
+  const pct=Math.min(val/(max||1),1)*100;
+  el.innerHTML='<div class="stat-head"><i class="fas '+icon+'"></i>'+label+'</div><div class="stat-value">'+val+' <small>'+unit+'</small></div><div class="stat-bar"><div class="stat-bar-fill" style="width:'+pct.toFixed(0)+'%;background:'+color+'"></div></div>';
+ };
+ mk($('statUsers'),'fa-users','总账户',s.totalUsers,'人',50,'var(--accent)');
+ mk($('statOps'),'fa-user-check','今日操作',s.recentLogins,'次',30,'var(--green)');
+ const mb=(s.trafficToday/1024/1024).toFixed(1);
+ mk($('statTraffic'),'fa-tachometer-alt','今日流量',mb,'MB',1024,'var(--gold)');
+}
+
 let usersData=[];
 async function loadAdmin(){
  if(!user||user.role!=='admin')return;
  try{
   const s=await call('/admin/stats');
-  $('totalUsers').textContent=s.totalUsers;
-  $('recentLogins').textContent=s.recentLogins;
-  $('trafficUsage').textContent=(s.trafficToday/1024).toFixed(1)+' KB';
+  updateStats(s);
  }catch(e){}
  try{
   const d=await call('/admin/users');
@@ -980,9 +992,7 @@ setInterval(function(){
  if(user&&user.role==='admin'&&document.getElementById('adminPanel').classList.contains('active')){
   // 刷新统计数据
   call('/admin/stats').then(s=>{
-   document.getElementById('totalUsers').textContent=s.totalUsers;
-   document.getElementById('recentLogins').textContent=s.recentLogins;
-   document.getElementById('trafficUsage').textContent=(s.trafficToday/1024).toFixed(1)+' KB';
+   updateStats(s);
   }).catch(()=>{});
   // 趋势图如果开着也刷新
   if(document.getElementById('chartModal').classList.contains('active'))loadTraffic();
