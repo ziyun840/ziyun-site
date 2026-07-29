@@ -917,11 +917,13 @@ $('badgeClick').onclick=function(){
  new MutationObserver(function(){
   btn.classList.toggle('show',document.getElementById('adminPanel').classList.contains('active'));
  }).observe(document.getElementById('adminPanel'),{attributes:true,attributeFilter:['class']});
- // 点击返回
- $('exitBtn').onclick=function(){
-  $('adminPanel').classList.remove('active');$('normalView').style.display='grid';
+ // 点击返回（拖拽过则不触发）
+ btn.addEventListener('click',function(e){
+  if(dragStarted){dragStarted=false;return}
+  document.getElementById('adminPanel').classList.remove('active');
+  document.getElementById('normalView').style.display='grid';
   status('👤 返回','fa-arrow-left','#1f5a7a');
- };
+ });
 })();
 $('refreshBtn').onclick=function(){if(user&&user.role==='admin'){loadAdmin();toast('🔄 已刷新','fa-sync',1500)}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
 $('clearLogsBtn').onclick=function(){if(user&&user.role==='admin'){clearLogs()}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
