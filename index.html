@@ -134,9 +134,9 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .back-to-top.show:hover{transform:translateY(-3px);background:rgba(40,70,110,.85);box-shadow:0 8px 30px rgba(0,0,0,.2)}
 
 /* 悬浮返回按钮 */
-.float-exit{position:fixed;bottom:90px;right:30px;width:48px;height:48px;border-radius:50%;background:rgba(30,50,80,.7);color:#fff;border:none;cursor:grab;font-size:1.2rem;display:none;align-items:center;justify-content:center;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:all .3s ease;user-select:none}
+.float-exit{position:fixed;bottom:90px;right:30px;width:48px;height:48px;border-radius:50%;background:rgba(30,50,80,.7);color:#fff;border:none;cursor:grab;font-size:1.2rem;display:none;align-items:center;justify-content:center;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.15);transition:background .3s,box-shadow .3s;user-select:none}
 .float-exit.show{display:flex}
-.float-exit.show:hover{transform:translateY(-3px);background:rgba(40,70,110,.85);box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.float-exit.show:hover{background:rgba(40,70,110,.85);box-shadow:0 8px 30px rgba(0,0,0,.2)}
 .float-exit:active{cursor:grabbing}
 .poem-bar{animation:fadeUp .6s ease-out .3s both}
 .info-strip{animation:fadeUp .6s ease-out .4s both}
