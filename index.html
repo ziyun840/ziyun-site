@@ -880,27 +880,33 @@ $('badgeClick').onclick=function(){
 // ---- 悬浮返回按钮（可拖拽） ----
 (function(){
  const btn=document.getElementById('exitBtn');
+ if(!btn)return;
  let isDragging=false,dragStarted=false,offX=0,offY=0;
- // 从 localStorage 恢复位置
- const saved=localStorage.getItem('zy-exit-pos');
- if(saved){const p=JSON.parse(saved);btn.style.right='';btn.style.bottom='';btn.style.left=p.x+'px';btn.style.top=p.y+'px'}
+ // 安全恢复上次位置
+ try{
+  const saved=localStorage.getItem('zy-exit-pos');
+  if(saved){
+   const p=JSON.parse(saved);
+   if(typeof p.x==='number'&&typeof p.y==='number'&&p.x>=0&&p.y>=0){
+    btn.style.right='';btn.style.bottom='';
+    btn.style.left=p.x+'px';btn.style.top=p.y+'px';
+   }
+  }
+ }catch(e){}
  btn.addEventListener('mousedown',function(e){
-  const rect=this.getBoundingClientRect();
+  const rect=btn.getBoundingClientRect();
+  if(rect.width===0)return; // 不可见时不处理
   isDragging=true;dragStarted=false;
   offX=e.clientX-rect.left;
   offY=e.clientY-rect.top;
-  this.style.cursor='grabbing';
+  btn.style.cursor='grabbing';
   e.preventDefault();
  });
  document.addEventListener('mousemove',function(e){
   if(!isDragging)return;
   dragStarted=true;
-  // 限制不超出窗口
-  const maxX=window.innerWidth-btn.offsetWidth;
-  const maxY=window.innerHeight-btn.offsetHeight;
   let x=e.clientX-offX,y=e.clientY-offY;
-  x=Math.max(0,Math.min(x,maxX));
-  y=Math.max(0,Math.min(y,maxY));
+  if(isNaN(x)||isNaN(y))return;
   btn.style.left=x+'px';btn.style.top=y+'px';
   btn.style.right='';btn.style.bottom='';
  });
@@ -908,8 +914,11 @@ $('badgeClick').onclick=function(){
   if(isDragging){
    isDragging=false;
    btn.style.cursor='grab';
-   if(dragStarted){
-    localStorage.setItem('zy-exit-pos',JSON.stringify({x:parseInt(btn.style.left),y:parseInt(btn.style.top)}));
+   if(dragStarted&&btn.style.left){
+    const x=parseInt(btn.style.left),y=parseInt(btn.style.top);
+    if(!isNaN(x)&&!isNaN(y)){
+     localStorage.setItem('zy-exit-pos',JSON.stringify({x,y}));
+    }
    }
   }
  });
