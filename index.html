@@ -303,6 +303,11 @@ body{min-height:100vh;background:radial-gradient(circle at 20% 30%,var(--bg-radi
 .verify-error{color:var(--red);font-size:.85rem;margin-top:8px;display:none;align-items:center;gap:6px}
 .verify-error.show{display:flex}
 
+/* 按钮涟漪 */
+.ripple-wrap{position:relative;overflow:hidden;isolation:isolate}
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.4);transform:scale(0);animation:rippleOut .55s ease-out;pointer-events:none;z-index:2}
+@keyframes rippleOut{to{transform:scale(3);opacity:0}}
+
 /* 背景选择器 */
 .bg-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--btn-bd);background:var(--btn-bg);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s;color:var(--text2);position:relative}
 .bg-btn:hover{background:var(--inp-fc);transform:scale(1.08)}
@@ -1046,6 +1051,26 @@ setInterval(function(){
   if(document.getElementById('chartModal').classList.contains('active'))loadTraffic();
  }
 },30000);
+// ---- 按钮涟漪反馈 ----
+(function(){
+ const sel='.btn,.btn-sm,.btn-p,.btn-s,.btn-o,.dl-link,.filter-btn,.theme-btn,.bg-btn,.float-exit,.back-to-top,.su,.du,.danger';
+ document.addEventListener('click',function(e){
+  const btn=e.target.closest(sel);
+  if(!btn)return;
+  const rect=btn.getBoundingClientRect();
+  if(rect.width===0||rect.height===0)return;
+  const r=document.createElement('span');
+  r.className='ripple';
+  const size=Math.max(rect.width,rect.height);
+  r.style.width=r.style.height=size+'px';
+  r.style.left=(e.clientX-rect.left-size/2)+'px';
+  r.style.top=(e.clientY-rect.top-size/2)+'px';
+  btn.classList.add('ripple-wrap');
+  btn.appendChild(r);
+  r.addEventListener('animationend',function(){r.remove()});
+ });
+})();
+
 console.log('[子云] 云端版 D1 已加载');
 console.log('[子云] 管理员: admin / admin123');
 })();
