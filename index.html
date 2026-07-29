@@ -427,7 +427,17 @@ async function loadDownloads(adminMode){
   });
   document.querySelectorAll('.dl-link').forEach(l=>{
    l.addEventListener('click',function(e){
-    if(this.dataset.enabled==='false'){e.preventDefault();toast('⛔ 该下载已禁用','fa-ban',2000);return}
+    if(this.dataset.enabled==='false'){
+     e.preventDefault();
+     // 普通用户点击禁用链接计数
+     if(!user||user.role!=='admin'){
+      let c=parseInt(localStorage.getItem('zy-dl-ban')||'0');
+      c++;
+      localStorage.setItem('zy-dl-ban',c);
+      if(c>=3){toast('⛔ 该下载链接已禁用，具体情况请联系管理员','fa-exclamation-triangle',4000);return}
+     }
+     toast('⛔ 该下载已禁用','fa-ban',2000);return
+    }
     const url=this.dataset.url;
     if(!url||url==='#'){e.preventDefault();toast('❌ 链接待配置','fa-exclamation-triangle',2000);return}
     if(!user){e.preventDefault();toast('🔒 请先登录','fa-lock',3000);return}
