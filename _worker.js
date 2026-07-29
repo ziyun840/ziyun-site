@@ -134,7 +134,7 @@ export default {
         const e = await env.DB.prepare('SELECT username FROM users WHERE username = ?').bind(username).first();
         if (e) return json({ error: '用户名已存在' }, 409);
         await env.DB.prepare('INSERT INTO users (username,password_hash,role) VALUES (?,?,\'user\')').bind(username, password).run();
-        await log(username, 'register', '新用户注册');
+        await log(username, 'register', '');
         return json({ success: true, message: '注册成功' });
       }
 
@@ -163,7 +163,7 @@ export default {
         let token = '';
         for (let i = 0; i < 32; i++) token += chars.charAt(Math.floor(Math.random() * chars.length));
         await env.DB.prepare('INSERT INTO sessions (token,username) VALUES (?,?)').bind(token, username).run();
-        await log(username, u.role === 'admin' ? 'admin' : 'login', u.role === 'admin' ? '管理员登录' : '用户登录');
+        await log(username, u.role === 'admin' ? 'admin' : 'login', '');
         return json({ success: true, token, username: u.username, role: u.role });
       }
 
