@@ -877,11 +877,11 @@ $('badgeClick').onclick=function(){
   toast('📍 控制台','fa-sliders-h',2000);
  }else{toast('⛔ 需管理员登录','fa-exclamation-triangle',2000)}
 };
-// ---- 悬浮返回按钮（可拖拽）—— 用 absolute + 滚动修正避开 fixed 渲染 bug ----
+// ---- 悬浮返回按钮（可拖拽）—— 使用 Pointer Events ----
 (function(){
  const btn=document.getElementById('exitBtn');
  if(!btn)return;
- let isDragging=false,dragStarted=false,offX=0,offY=0;
+ let isDragging=false,dragStarted=false;
  let fixedX=window.innerWidth-78,fixedY=window.innerHeight-138;
  // 安全恢复上次位置
  try{
@@ -894,16 +894,15 @@ $('badgeClick').onclick=function(){
   }
  }catch(e){}
  function syncPos(){btn.style.left=fixedX+'px';btn.style.top=fixedY+'px'}
- btn.addEventListener('mousedown',function(e){
-  const rect=btn.getBoundingClientRect();
-  if(rect.width===0)return;
+ btn.addEventListener('pointerdown',function(e){
   isDragging=true;dragStarted=false;
   offX=e.clientX-fixedX;
   offY=e.clientY-fixedY;
+  btn.setPointerCapture(e.pointerId);
   btn.style.cursor='grabbing';
   e.preventDefault();
  });
- document.addEventListener('mousemove',function(e){
+ btn.addEventListener('pointermove',function(e){
   if(!isDragging)return;
   dragStarted=true;
   let x=e.clientX-offX,y=e.clientY-offY;
@@ -912,14 +911,16 @@ $('badgeClick').onclick=function(){
   y=Math.max(0,Math.min(y,window.innerHeight-btn.offsetHeight));
   fixedX=x;fixedY=y;syncPos();
  });
- document.addEventListener('mouseup',function(){
-  if(isDragging){
-   isDragging=false;
-   btn.style.cursor='grab';
-   if(dragStarted){
-    localStorage.setItem('zy-exit-pos',JSON.stringify({x:fixedX,y:fixedY}));
-   }
+ btn.addEventListener('pointerup',function(e){
+  if(!isDragging)return;
+  isDragging=false;
+  btn.style.cursor='grab';
+  if(dragStarted){
+   localStorage.setItem('zy-exit-pos',JSON.stringify({x:fixedX,y:fixedY}));
   }
+ });
+ btn.addEventListener('pointercancel',function(){
+  isDragging=false;btn.style.cursor='grab';
  });
  // 滚动时同步位置
  window.addEventListener('scroll',syncPos);
