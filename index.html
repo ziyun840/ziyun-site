@@ -881,7 +881,7 @@ $('badgeClick').onclick=function(){
 (function(){
  const btn=document.getElementById('exitBtn');
  if(!btn)return;
- let isDragging=false,dragStarted=false;
+ let isDragging=false,dragStarted=false,offX=0,offY=0;
  let fixedX=window.innerWidth-78,fixedY=window.innerHeight-138;
  // 安全恢复上次位置
  try{
