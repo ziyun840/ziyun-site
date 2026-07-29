@@ -631,6 +631,13 @@ function selectUser(name){
  const d=usersData||[];
  const u=d.find(x=>x.username===name);
  if(!u)return;
+ // admin 账号只有 admin 本人能改
+ if(name==='admin'&&(!user||user.username!=='admin')){
+  toast('⛔ 只有 admin 本人才能修改此账号','fa-lock',3000);
+  $('userSelect').value='';
+  $('editForm').style.display='none';selectedUser=null;
+  return
+ }
  $('editUser').value=u.username||'';
  $('editPass').value=u.password||'';
  $('editRole').value=u.role||'user';

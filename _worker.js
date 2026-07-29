@@ -218,6 +218,7 @@ export default {
         const { newUser, password, role } = body;
         if (!newUser || newUser.length < 3) return json({ error: '用户名至少3个字符' }, 400);
         if (tu === 'admin' && role !== 'admin') return json({ error: '管理员角色不可变更' }, 400);
+        if (tu === 'admin' && u !== 'admin') return json({ error: '只有 admin 本人才能修改自己的账号' }, 403);
         if (newUser !== tu) {
           // 用户名变更
           await env.DB.prepare('DELETE FROM sessions WHERE username = ?').bind(tu).run();
