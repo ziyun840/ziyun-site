@@ -875,30 +875,39 @@ $('badgeClick').onclick=function(){
 // ---- 悬浮返回按钮（可拖拽） ----
 (function(){
  const btn=document.getElementById('exitBtn');
- let isDragging=false,offX=0,offY=0;
+ let isDragging=false,dragStarted=false,offX=0,offY=0;
  // 从 localStorage 恢复位置
  const saved=localStorage.getItem('zy-exit-pos');
  if(saved){const p=JSON.parse(saved);btn.style.right='';btn.style.bottom='';btn.style.left=p.x+'px';btn.style.top=p.y+'px'}
- btn.onmousedown=function(e){
-  isDragging=true;
-  offX=e.clientX-btn.offsetLeft;
-  offY=e.clientY-btn.offsetTop;
+ btn.addEventListener('mousedown',function(e){
+  const rect=this.getBoundingClientRect();
+  isDragging=true;dragStarted=false;
+  offX=e.clientX-rect.left;
+  offY=e.clientY-rect.top;
   this.style.cursor='grabbing';
   e.preventDefault();
- };
- document.onmousemove=function(e){
+ });
+ document.addEventListener('mousemove',function(e){
   if(!isDragging)return;
-  btn.style.left=(e.clientX-offX)+'px';
-  btn.style.top=(e.clientY-offY)+'px';
+  dragStarted=true;
+  // 限制不超出窗口
+  const maxX=window.innerWidth-btn.offsetWidth;
+  const maxY=window.innerHeight-btn.offsetHeight;
+  let x=e.clientX-offX,y=e.clientY-offY;
+  x=Math.max(0,Math.min(x,maxX));
+  y=Math.max(0,Math.min(y,maxY));
+  btn.style.left=x+'px';btn.style.top=y+'px';
   btn.style.right='';btn.style.bottom='';
- };
- document.onmouseup=function(){
+ });
+ document.addEventListener('mouseup',function(){
   if(isDragging){
    isDragging=false;
    btn.style.cursor='grab';
-   localStorage.setItem('zy-exit-pos',JSON.stringify({x:btn.offsetLeft,y:btn.offsetTop}));
+   if(dragStarted){
+    localStorage.setItem('zy-exit-pos',JSON.stringify({x:parseInt(btn.style.left),y:parseInt(btn.style.top)}));
+   }
   }
- };
+ });
  // 监控管理员面板显隐
  new MutationObserver(function(){
   btn.classList.toggle('show',document.getElementById('adminPanel').classList.contains('active'));
