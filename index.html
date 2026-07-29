@@ -423,21 +423,26 @@ async function loadDownloads(adminMode){
    const enabled=item.enabled===undefined||item.enabled===1||item.enabled===true;
    const disabledCls=enabled?'':' style="opacity:.45"';
    const badge=enabled?'':' <span style="font-size:.7rem;background:rgba(180,60,60,.15);color:var(--red);padding:2px 10px;border-radius:40px;margin-left:6px">已禁用</span>';
-   list.innerHTML+='<div class="dl-item"'+disabledCls+'><div class="dl-info"><i class="fas '+icon+'"></i><span>'+item.name+badge+'</span></div><a href="'+(hasUrl&&enabled?item.url:'#')+'" class="dl-link" target="'+(hasUrl&&enabled?'_blank':'_self')+'" data-url="'+(item.url||'')+'" data-enabled="'+enabled+'"><i class="fas fa-external-link-alt"></i> '+(enabled?'下载':'已禁用')+'</a></div>';
+   list.innerHTML+='<div class="dl-item"'+disabledCls+' data-enabled="'+enabled+'"><div class="dl-info"><i class="fas '+icon+'"></i><span>'+item.name+badge+'</span></div><a href="'+(hasUrl&&enabled?item.url:'#')+'" class="dl-link" target="'+(hasUrl&&enabled?'_blank':'_self')+'" data-url="'+(item.url||'')+'" data-enabled="'+enabled+'"><i class="fas fa-external-link-alt"></i> '+(enabled?'下载':'已禁用')+'</a></div>';
   });
+  // 整个下载列表的事件委托——点禁用项整栏都触发
+  $('downloadList').onclick=function(e){
+   const item=e.target.closest('.dl-item');
+   if(!item||item.dataset.enabled!=='false')return;
+   e.preventDefault();
+   // 普通用户点击禁用链接计数
+   if(!user||user.role!=='admin'){
+    let c=parseInt(localStorage.getItem('zy-dl-ban')||'0');
+    c++;
+    localStorage.setItem('zy-dl-ban',c);
+    if(c>=3){toast('⛔ 该下载链接已禁用，具体情况请联系管理员','fa-exclamation-triangle',4000);return}
+   }
+   toast('⛔ 该下载已禁用','fa-ban',2000);
+  };
+  // 启用项的跳转由链接自身处理
   document.querySelectorAll('.dl-link').forEach(l=>{
    l.addEventListener('click',function(e){
-    if(this.dataset.enabled==='false'){
-     e.preventDefault();
-     // 普通用户点击禁用链接计数
-     if(!user||user.role!=='admin'){
-      let c=parseInt(localStorage.getItem('zy-dl-ban')||'0');
-      c++;
-      localStorage.setItem('zy-dl-ban',c);
-      if(c>=3){toast('⛔ 该下载链接已禁用，具体情况请联系管理员','fa-exclamation-triangle',4000);return}
-     }
-     toast('⛔ 该下载已禁用','fa-ban',2000);return
-    }
+    if(this.dataset.enabled==='false')return; // 已由委托处理
     const url=this.dataset.url;
     if(!url||url==='#'){e.preventDefault();toast('❌ 链接待配置','fa-exclamation-triangle',2000);return}
     if(!user){e.preventDefault();toast('🔒 请先登录','fa-lock',3000);return}
