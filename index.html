@@ -657,6 +657,8 @@ function toggleDlItem(i){
  }
 }
 function removeDlItem(i){dlData.splice(i,1);renderDlAdmin()}
+// 暴露给 HTML 内联事件
+window.toggleDlItem=toggleDlItem;window.removeDlItem=removeDlItem;
 $('dlAddBtn').onclick=function(){dlData.push({name:'新项目',url:'#',enabled:true});renderDlAdmin()};
 $('dlSaveBtn').onclick=async function(){
  const items=[];
