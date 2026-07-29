@@ -300,10 +300,10 @@ export default {
         return json({ traffic: data });
       }
 
-      // === 获取下载链接（仅启用的） ===
+      // === 获取下载链接（含禁用状态，前端控制显示） ===
       if (path === '/api/downloads' && method === 'GET') {
         await ensureDownloadsEnabledColumn();
-        const { results } = await env.DB.prepare('SELECT id, name, url, enabled FROM downloads WHERE enabled = 1 OR enabled IS NULL ORDER BY sort_order ASC, id ASC').all();
+        const { results } = await env.DB.prepare('SELECT id, name, url, enabled FROM downloads ORDER BY sort_order ASC, id ASC').all();
         return json({ downloads: results });
       }
 
