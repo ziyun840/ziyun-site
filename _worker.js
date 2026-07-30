@@ -265,9 +265,26 @@ export default {
         const u = await getUser();
         if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
         const filter = url.searchParams.get('filter') || 'all';
+        const search = url.searchParams.get('search') || '';
         let q, p;
-        if (filter === 'all') { q = 'SELECT * FROM audit_logs ORDER BY id DESC LIMIT 200'; p = []; }
-        else { q = 'SELECT * FROM audit_logs WHERE action = ? ORDER BY id DESC LIMIT 200'; p = [filter]; }
+        if (filter === 'all') {
+          q = 'SELECT * FROM audit_logs';
+          p = [];
+        } else {
+          q = 'SELECT * FROM audit_logs WHERE action = ?';
+          p = [filter];
+        }
+        if (search) {
+          const s = '%' + search + '%';
+          if (p.length) {
+            q += ' AND (username LIKE ? OR detail LIKE ? OR ip LIKE ?)';
+            p.push(s, s, s);
+          } else {
+            q += ' WHERE (username LIKE ? OR detail LIKE ? OR ip LIKE ?)';
+            p.push(s, s, s);
+          }
+        }
+        q += ' ORDER BY id DESC LIMIT 200';
         const { results } = await env.DB.prepare(q).bind(...p).all();
         return json({ logs: results });
       }

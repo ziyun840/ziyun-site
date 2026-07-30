@@ -670,12 +670,10 @@ async function saveEdit(){
 async function loadLogs(f){
  f=f||'all';
  try{
-  const d=await call('/admin/logs?filter='+f);
+  const s=$('logSearch').value.trim();  const d=await call('/admin/logs?filter='+f+(s?'&search='+encodeURIComponent(s):''));
   const tb=$('logBody');tb.innerHTML='';
   const am={login:'登录',logout:'退出',register:'注册',download:'下载',admin:'管理',delete:'删除',update:'修改'};
   let logs=d.logs||[];
-  const s=$('logSearch').value.trim();
-  if(s)logs=logs.filter(e=>e.username.includes(s)||(e.ip||'').includes(s)||(e.detail||'').includes(s));
   if(!logs.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;opacity:.5">暂无日志</td></tr>';$('recentText').textContent='暂无记录';return}
   logs.forEach(e=>{
    let t;try{t=new Date(e.created_at+'Z').toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})}catch(ex){t=e.created_at||'-'}
@@ -954,7 +952,7 @@ $('badgeClick').onclick=function(){
 })();
 $('refreshBtn').onclick=function(){if(user&&user.role==='admin'){const btn=this;btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-pulse"></i> 刷新中...';loadAdmin();setTimeout(()=>{btn.disabled=false;btn.innerHTML='<i class="fas fa-sync"></i> 刷新';toast('🔄 已刷新','fa-sync',2000)},600)}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
 $('clearLogsBtn').onclick=function(){if(user&&user.role==='admin'){clearLogs()}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
-$('logSearch').oninput=function(){const af=document.querySelector('#logFilters .filter-btn.active');loadLogs(af?af.dataset.fl:'all')};
+let searchTimer; $('logSearch').oninput=function(){clearTimeout(searchTimer);searchTimer=setTimeout(()=>{const af=document.querySelector('#logFilters .filter-btn.active');loadLogs(af?af.dataset.fl:'all')},300)};
 document.querySelectorAll('#logFilters .filter-btn').forEach(b=>{
  b.onclick=function(){
   document.querySelectorAll('#logFilters .filter-btn').forEach(x=>x.classList.remove('active'));this.classList.add('active');
