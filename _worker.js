@@ -284,7 +284,8 @@ export default {
             p.push(s, s, s, s);
           }
         }
-        q += ' ORDER BY id DESC LIMIT 200';
+        q += ' ORDER BY id DESC';
+        if (!search) q += ' LIMIT 200';
         const { results } = await env.DB.prepare(q).bind(...p).all();
         return json({ logs: results });
       }
