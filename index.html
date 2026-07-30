@@ -952,7 +952,7 @@ $('badgeClick').onclick=function(){
  }).observe(document.getElementById('adminPanel'),{attributes:true,attributeFilter:['class']});
  // 点击返回已在 pointerup 中处理
 })();
-$('refreshBtn').onclick=function(){if(user&&user.role==='admin'){loadAdmin();toast('🔄 已刷新','fa-sync',1500)}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
+$('refreshBtn').onclick=function(){if(user&&user.role==='admin'){const btn=this;btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-pulse"></i> 刷新中...';loadAdmin();setTimeout(()=>{btn.disabled=false;btn.innerHTML='<i class="fas fa-sync"></i> 刷新';toast('🔄 已刷新','fa-sync',2000)},600)}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
 $('clearLogsBtn').onclick=function(){if(user&&user.role==='admin'){clearLogs()}else{toast('⛔ 请登录','fa-exclamation-triangle',2000)}};
 $('logSearch').oninput=function(){const af=document.querySelector('#logFilters .filter-btn.active');loadLogs(af?af.dataset.fl:'all')};
 document.querySelectorAll('#logFilters .filter-btn').forEach(b=>{
