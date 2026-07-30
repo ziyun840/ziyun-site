@@ -277,11 +277,11 @@ export default {
         if (search) {
           const s = '%' + search + '%';
           if (p.length) {
-            q += ' AND (username LIKE ? OR detail LIKE ? OR ip LIKE ?)';
-            p.push(s, s, s);
+            q += ' AND (username LIKE ? OR detail LIKE ? OR ip LIKE ? OR created_at LIKE ?)';
+            p.push(s, s, s, s);
           } else {
-            q += ' WHERE (username LIKE ? OR detail LIKE ? OR ip LIKE ?)';
-            p.push(s, s, s);
+            q += ' WHERE (username LIKE ? OR detail LIKE ? OR ip LIKE ? OR created_at LIKE ?)';
+            p.push(s, s, s, s);
           }
         }
         q += ' ORDER BY id DESC LIMIT 200';
