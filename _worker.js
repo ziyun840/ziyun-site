@@ -275,7 +275,9 @@ export default {
           p = [filter];
         }
         if (search) {
-          const s = '%' + search + '%';
+          // 兼容斜杠日期格式 2026/7/30 → 2026-07-30
+          let qs = search.replace(/\//g, '-');
+          const s = '%' + qs + '%';
           if (p.length) {
             q += ' AND (username LIKE ? OR detail LIKE ? OR ip LIKE ? OR created_at LIKE ?)';
             p.push(s, s, s, s);
