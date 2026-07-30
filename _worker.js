@@ -219,16 +219,27 @@ export default {
         if (!newUser || newUser.length < 3) return json({ error: '用户名至少3个字符' }, 400);
         if (tu === 'admin' && role !== 'admin') return json({ error: '管理员角色不可变更' }, 400);
         if (tu === 'admin' && u !== 'admin') return json({ error: '只有 admin 本人才能修改自己的账号' }, 403);
+        // 获取旧数据做变更对比
+        const oldRow = await env.DB.prepare('SELECT username, password_hash, role FROM users WHERE username = ?').bind(tu).first();
+        let changes = [];
         if (newUser !== tu) {
-          // 用户名变更
+          changes.push('改名 ' + newUser);
+        }
+        if (oldRow && oldRow.password_hash !== password) {
+          changes.push('密码已改');
+        }
+        if (oldRow && oldRow.role !== role) {
+          const rl = role === 'admin' ? '管理员' : '普通';
+          changes.push('角色 ' + rl);
+        }
+        if (newUser !== tu) {
           await env.DB.prepare('DELETE FROM sessions WHERE username = ?').bind(tu).run();
           await env.DB.prepare('DELETE FROM users WHERE username = ?').bind(tu).run();
           await env.DB.prepare('INSERT INTO users (username,password_hash,role) VALUES (?,?,?)').bind(newUser, password, role).run();
-          await log(u, 'update', '修改用户: ' + tu + ' → ' + newUser);
         } else {
           await env.DB.prepare('UPDATE users SET password_hash = ?, role = ? WHERE username = ?').bind(password, role, tu).run();
-          await log(u, 'update', '修改用户: ' + tu);
         }
+        await log(u, 'update', '修改用户: ' + tu + (changes.length ? '，' + changes.join('，') : ''));
         return json({ success: true });
       }
 
@@ -324,13 +335,31 @@ export default {
         const { items } = body;
         if (!items || !Array.isArray(items)) return json({ error: '参数错误' }, 400);
         await ensureDownloadsEnabledColumn();
+        const oldItems = (await env.DB.prepare('SELECT name, url, enabled FROM downloads ORDER BY sort_order ASC, id ASC').all()).results || [];
         await env.DB.prepare('DELETE FROM downloads').run();
+        // 逐项对比变更
+        let dlChanges = [];
         for (let i = 0; i < items.length; i++) {
           const item = items[i];
           const enabled = item.enabled === undefined ? 1 : (item.enabled ? 1 : 0);
           await env.DB.prepare('INSERT INTO downloads (name, url, sort_order, enabled) VALUES (?,?,?,?)').bind(item.name || '未命名', item.url || '#', i, enabled).run();
+          const old = oldItems[i];
+          if (!old) {
+            dlChanges.push('新增 ' + (item.name || '未命名'));
+          } else {
+            let c = [];
+            if (old.name !== item.name) c.push('改名 ' + item.name);
+            if (old.url !== item.url) c.push('URL');
+            if (old.enabled !== enabled) c.push(enabled ? '已启用' : '已禁用');
+            if (c.length) dlChanges.push((item.name || '未命名') + ': ' + c.join('，'));
+          }
         }
-        await log(u, 'update', '更新下载链接');
+        // 检查被删除的项
+        if (items.length < oldItems.length) {
+          dlChanges.push('删除了 ' + (oldItems.length - items.length) + ' 项');
+        }
+        if (!dlChanges.length) dlChanges.push('无变动');
+        await log(u, 'update', '下载链接: ' + dlChanges.join('; '));
         return json({ success: true });
       }
 
