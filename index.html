@@ -215,6 +215,16 @@ body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(0,100,25
     <button class="filter-btn" data-fl="download">下载</button>
    </div>
   </div>
+  <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th><th>详情</th></tr></thead><tbody id="logBody"></tbody></table></div>
+  <div style="margin-top:10px;display:flex;gap:12px;align-items:center">
+   <div class="recent-log" style="margin-top:0;flex:1"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
+   <button class="btn-sm danger" id="clearLogsBtn" style="flex-shrink:0;white-space:nowrap"><i class="fas fa-trash-alt"></i> 清空日志</button>
+  </div>
+  <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
+   <button class="btn btn-o" id="chartBtn"><i class="fas fa-chart-line"></i> 趋势图</button>
+   <button class="btn btn-o" id="refreshBtn"><i class="fas fa-sync"></i> 刷新</button>
+  </div>
+  <hr style="border:none;border-top:1px solid var(--card-border);margin:1.2rem 0">
   <div style="margin:.8rem 0 .4rem;font-weight:500;color:var(--text2)"><i class="fas fa-edit"></i> 用户管理</div>
   <div id="userSelectWrap" style="margin-bottom:.8rem">
    <select id="userSelect" style="width:100%;padding:10px 14px;border-radius:20px;background:var(--inp-bg);border:1px solid var(--inp-bd);color:var(--text1);font-size:.95rem"><option value="">— 选择用户 —</option></select>
@@ -233,16 +243,6 @@ body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(0,100,25
   <div id="dlAdminWrap" style="margin-bottom:.8rem"></div>
   <button class="btn btn-o" id="dlAddBtn" style="margin-bottom:.6rem"><i class="fas fa-plus"></i> 添加下载项</button>
   <button class="btn btn-p" id="dlSaveBtn" style="margin-bottom:1rem"><i class="fas fa-save"></i> 保存全部</button>
-  <hr style="border:none;border-top:1px solid var(--card-border);margin:.8rem 0">
-  <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th><th>详情</th></tr></thead><tbody id="logBody"></tbody></table></div>
-  <div style="margin-top:10px;display:flex;gap:12px;align-items:center">
-   <div class="recent-log" style="margin-top:0;flex:1"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
-   <button class="btn-sm danger" id="clearLogsBtn" style="flex-shrink:0;white-space:nowrap"><i class="fas fa-trash-alt"></i> 清空日志</button>
-  </div>
-  <div style="margin-top:16px;display:flex;gap:12px;flex-wrap:wrap">
-   <button class="btn btn-o" id="chartBtn"><i class="fas fa-chart-line"></i> 趋势图</button>
-   <button class="btn btn-o" id="refreshBtn"><i class="fas fa-sync"></i> 刷新</button>
-  </div>
  </div>
  <div class="contact-section">
   <div class="contact-items">
