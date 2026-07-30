@@ -363,6 +363,34 @@ export default {
         return json({ success: true });
       }
 
+      // === 迁移旧日志格式（一次性） ===
+      if (path === '/api/admin/migrate-logs' && method === 'POST') {
+        const u = await getUser();
+        if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
+        const oldLogs = await env.DB.prepare("SELECT id, action, detail, username FROM audit_logs WHERE action = 'update' OR action = 'delete'").all();
+        let updated = 0;
+        for (const row of (oldLogs.results || [])) {
+          let newDetail = row.detail;
+          // 旧格式: "修改用户: xxx" → 加标注
+          if (/^修改用户: /.test(row.detail) && !row.detail.includes('，') && !row.detail.includes('：')) {
+            if (row.action === 'delete') {
+              newDetail = '删除用户: ' + row.detail.replace('修改用户: ', '') + '（历史）';
+            } else {
+              newDetail = row.detail + '（历史）';
+            }
+          }
+          // 旧格式: "更新下载链接" → 加标注
+          if (row.detail === '更新下载链接') {
+            newDetail = '下载链接已更新（历史）';
+          }
+          if (newDetail !== row.detail) {
+            await env.DB.prepare('UPDATE audit_logs SET detail = ? WHERE id = ?').bind(newDetail, row.id).run();
+            updated++;
+          }
+        }
+        return json({ migrated: updated, total: (oldLogs.results || []).length });
+      }
+
       return json({ error: 'Not found' }, 404);
     } catch (err) {
       console.error(err);
