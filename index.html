@@ -501,9 +501,16 @@ async function register(){const u=$('userInput').value.trim(),p=$('passInput').v
 async function logout(){try{if(token)await call('/logout',{method:'POST'})}catch(e){}token=null;localStorage.removeItem('zy-t');user=null;ui();status('已退出登录','fa-sign-out-alt','var(--text-3)');$('passInput').value='';toast('已退出登录','fa-sign-out-alt',2000)}
 
 let dlData=[];
+let dlOpSeq=0;
+function escAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+function renderPublicDownloads(){
+ const list=$('downloadList');if(!list)return;list.innerHTML='';const icons=['fa-file-archive','fa-code','fa-mobile-alt','fa-cloud','fa-tools','fa-link','fa-cog','fa-star'];dlData.forEach(function(item,i){const icon=icons[i%icons.length];const hasUrl=item.url&&item.url!=='#';const enabled=item.enabled===undefined||item.enabled===1||item.enabled===true;const disabledCls=enabled?'':' style="opacity:.45"';const badge=enabled?'':' <span style="font-size:.7rem;background:var(--red-soft);color:var(--red);padding:2px 8px;border-radius:6px;margin-left:6px">已禁用</span>';list.innerHTML+='<div class="dl-item"'+disabledCls+' data-enabled="'+enabled+'"><div class="dl-info"><i class="fas '+icon+'"></i><span>'+item.name+badge+'</span></div><a href="'+(hasUrl&&enabled?item.url:'#')+'" class="dl-link" target="'+(hasUrl&&enabled?'_blank':'_self')+'" data-url="'+(item.url||'')+'" data-enabled="'+enabled+'"><i class="fas fa-external-link-alt"></i> '+(enabled?'下载':'已禁用')+'</a></div>'});
+ list.onclick=function(e){const item=e.target.closest('.dl-item');if(!item||item.dataset.enabled!=='false')return;e.preventDefault();if(!user||user.role!=='admin'){let c=parseInt(localStorage.getItem('zy-dl-ban')||'0');c++;localStorage.setItem('zy-dl-ban',c);if(c>=3){toast('该下载链接已禁用，具体情况请联系管理员','fa-exclamation-triangle',4000);return}}toast('该下载已禁用','fa-ban',2000)};
+ Array.prototype.forEach.call(list.querySelectorAll('.dl-link'),function(l){l.addEventListener('click',function(e){if(this.dataset.enabled==='false')return;const url=this.dataset.url;if(!url||url==='#'){e.preventDefault();toast('链接待配置','fa-exclamation-triangle',2000);return}if(!user){e.preventDefault();toast('请先登录','fa-lock',3000);return}toast('跳转链接中','fa-cloud',2000)})});
+}
 async function loadDownloads(adminMode){
- if(!adminMode){const list=$('downloadList');list.innerHTML='';for(let i=0;i<3;i++)list.innerHTML+='<div class="skeleton-item"><div class="sk-icon"></div><div class="sk-line" style="flex:1;height:14px"></div><div class="sk-btn"></div></div>';}
- try{const ep=adminMode?'/admin/downloads':'/downloads';const d=await call(ep);dlData=d.downloads||[];const list=$('downloadList');list.innerHTML='';const icons=['fa-file-archive','fa-code','fa-mobile-alt','fa-cloud','fa-tools','fa-link','fa-cog','fa-star'];dlData.forEach((item,i)=>{const icon=icons[i%icons.length];const hasUrl=item.url&&item.url!=='#';const enabled=item.enabled===undefined||item.enabled===1||item.enabled===true;const disabledCls=enabled?'':' style="opacity:.45"';const badge=enabled?'':' <span style="font-size:.7rem;background:var(--red-soft);color:var(--red);padding:2px 8px;border-radius:6px;margin-left:6px">已禁用</span>';list.innerHTML+='<div class="dl-item"'+disabledCls+' data-enabled="'+enabled+'"><div class="dl-info"><i class="fas '+icon+'"></i><span>'+item.name+badge+'</span></div><a href="'+(hasUrl&&enabled?item.url:'#')+'" class="dl-link" target="'+(hasUrl&&enabled?'_blank':'_self')+'" data-url="'+(item.url||'')+'" data-enabled="'+enabled+'"><i class="fas fa-external-link-alt"></i> '+(enabled?'下载':'已禁用')+'</a></div>'});$('downloadList').onclick=function(e){const item=e.target.closest('.dl-item');if(!item||item.dataset.enabled!=='false')return;e.preventDefault();if(!user||user.role!=='admin'){let c=parseInt(localStorage.getItem('zy-dl-ban')||'0');c++;localStorage.setItem('zy-dl-ban',c);if(c>=3){toast('该下载链接已禁用，具体情况请联系管理员','fa-exclamation-triangle',4000);return}}toast('该下载已禁用','fa-ban',2000)};document.querySelectorAll('.dl-link').forEach(l=>{l.addEventListener('click',function(e){if(this.dataset.enabled==='false')return;const url=this.dataset.url;if(!url||url==='#'){e.preventDefault();toast('链接待配置','fa-exclamation-triangle',2000);return}if(!user){e.preventDefault();toast('请先登录','fa-lock',3000);return}toast('跳转链接中','fa-cloud',2000)})})}catch(e){if(!adminMode){$('downloadList').innerHTML='<div style="text-align:center;padding:1.2rem;opacity:.4;font-size:.9rem">暂无下载项</div>'}}}
+ if(!adminMode){const list=$('downloadList');if(list){list.innerHTML='';for(let i=0;i<3;i++)list.innerHTML+='<div class="skeleton-item"><div class="sk-icon"></div><div class="sk-line" style="flex:1;height:14px"></div><div class="sk-btn"></div></div>'}}
+ try{const ep=adminMode?'/admin/downloads':'/downloads';const d=await call(ep);dlData=d.downloads||[];renderPublicDownloads();if(adminMode)renderDlAdmin()}catch(e){if(!adminMode){const list=$('downloadList');if(list)list.innerHTML='<div style="text-align:center;padding:1.2rem;opacity:.4;font-size:.9rem">暂无下载项</div>'}}}
 loadDownloads();
 
 let thMode=localStorage.getItem('zy-th-mode')||'auto';
@@ -544,12 +551,50 @@ async function saveEdit(){if(!selectedUser)return;try{const nu=$('editUser').val
 
 async function loadLogs(f){f=f||'all';try{const s=$('logSearch').value.trim();const d=await call('/admin/logs?filter='+f+(s?'&search='+encodeURIComponent(s):''));const tb=$('logBody');tb.innerHTML='';const am={login:'登录',logout:'退出',register:'注册',download:'下载',admin:'管理',delete:'删除',update:'修改'};let logs=d.logs||[];if(!logs.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;opacity:.4">暂无日志</td></tr>';$('recentText').textContent='暂无记录';return}logs.forEach(e=>{let t;try{t=new Date(e.created_at+'Z').toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})}catch(ex){t=e.created_at||'-'}const tr=document.createElement('tr');tr.innerHTML='<td>'+t+'</td><td>'+e.username+'</td><td><span class="badge-log '+e.action+'">'+(am[e.action]||e.action)+'</span></td><td><span class="ip-tag">'+(e.ip||'-')+'</span></td><td style="font-size:.8rem;color:var(--text-3);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(e.detail||'')+'">'+(e.detail||'')+'</td>';tb.appendChild(tr)});$('recentText').textContent='最近: '+logs.slice(0,3).map(e=>e.username+' ('+(am[e.action]||e.action)+')').join('; ')}catch(e){}}
 
-function renderDlAdmin(){const wrap=$('dlAdminWrap');wrap.innerHTML='';dlData.forEach((item,i)=>{const enabled=item.enabled===undefined||item.enabled===1||item.enabled===true;wrap.innerHTML+='<div class="dl-item" style="margin-bottom:6px;'+(enabled?'':'opacity:.45')+'" data-idx="'+i+'"><div class="dl-info" style="flex:1;gap:8px"><input class="edit-input" id="dlName'+i+'" value="'+item.name.replace(/"/g,'&quot;')+'" placeholder="名称" style="max-width:160px"><input class="edit-input" id="dlUrl'+i+'" value="'+item.url.replace(/"/g,'&quot;')+'" placeholder="链接URL" style="flex:1;min-width:140px"></div><div style="display:flex;align-items:center;gap:8px"><label class="toggle-switch" title="'+(enabled?'点击禁用':'点击启用')+'"><input type="checkbox" id="dlToggle'+i+'" '+(enabled?'checked':'')+' onchange="toggleDlItem('+i+')"><span class="toggle-slider"></span></label><button class="btn-sm danger" onclick="removeDlItem('+i+')"><i class="fas fa-times"></i></button></div></div>'})}
-function toggleDlItem(i){if(!dlData[i])return;dlData[i].enabled=!dlData[i].enabled;renderDlAdmin();const items=[];dlData.forEach((item,j)=>{const n=$('dlName'+j),u=$('dlUrl'+j);if(n)items.push({name:n.value,url:u?u.value:'#',enabled:item.enabled!==false})});call('/admin/downloads',{method:'PUT',body:JSON.stringify({items})}).then(()=>{toast('已'+(dlData[i].enabled?'启用':'禁用')+'：'+dlData[i].name,'fa-toggle-on',1500);loadDownloads(true)}).catch(e=>toast('保存失败: '+e.message,'fa-times-circle',2000))}
-function removeDlItem(i){dlData.splice(i,1);renderDlAdmin()}
+function renderDlAdmin(){
+ const wrap=$('dlAdminWrap');if(!wrap)return;wrap.innerHTML='';
+ dlData.forEach(function(item,i){
+  const enabled=item.enabled===undefined||item.enabled===1||item.enabled===true;
+  wrap.innerHTML+='<div class="dl-item" style="margin-bottom:6px;'+(enabled?'':'opacity:.45')+'"><div class="dl-info" style="flex:1;gap:8px"><input class="edit-input" id="dlName'+i+'" value="'+escAttr(item.name)+'" placeholder="名称" style="max-width:160px"><input class="edit-input" id="dlUrl'+i+'" value="'+escAttr(item.url)+'" placeholder="链接URL" style="flex:1;min-width:140px"></div><div style="display:flex;align-items:center;gap:8px"><label class="toggle-switch" title="'+(enabled?'点击禁用':'点击启用')+'"><input type="checkbox" id="dlToggle'+i+'" '+(enabled?'checked':'')+' onchange="toggleDlItem('+i+',this.checked)"><span class="toggle-slider"></span></label><button class="btn-sm danger" onclick="removeDlItem('+i+')" title="删除后点保存全部生效"><i class="fas fa-times"></i></button></div></div>'
+ })
+}
+async function toggleDlItem(i,checked){
+ if(!dlData[i])return;
+ const item=dlData[i];const target=!!checked;const my=++dlOpSeq;
+ if(item.id==null){item.enabled=target;renderDlAdmin();toast('新项目请点「保存全部」提交','fa-info-circle',2000);return}
+ const wasOn=item.enabled===undefined||item.enabled===1||item.enabled===true;
+ item.enabled=target;renderDlAdmin();
+ try{
+  const r=await call('/admin/downloads/toggle',{method:'PUT',body:JSON.stringify({id:item.id,enabled:target})});
+  if(my!==dlOpSeq)return;
+  if(r.downloads)dlData=r.downloads;
+  renderDlAdmin();renderPublicDownloads();broadcastDl();
+  toast((target?'已启用：':'已禁用：')+item.name,'fa-toggle-on',1500);
+ }catch(e){if(my!==dlOpSeq)return;item.enabled=wasOn;renderDlAdmin();toast('保存失败: '+e.message,'fa-times-circle',2000)}
+}
+function removeDlItem(i){if(!dlData[i])return;dlData.splice(i,1);renderDlAdmin()}
 window.toggleDlItem=toggleDlItem;window.removeDlItem=removeDlItem;
-$('dlAddBtn').onclick=function(){dlData.push({name:'新项目',url:'#',enabled:true});renderDlAdmin()};
-$('dlSaveBtn').onclick=async function(){const items=[];dlData.forEach((item,i)=>{const n=$('dlName'+i),u=$('dlUrl'+i);if(n)items.push({name:n.value,url:u?u.value:'#',enabled:item.enabled!==false})});try{await call('/admin/downloads',{method:'PUT',body:JSON.stringify({items})});toast('下载链接已保存','fa-check-circle',2000);loadDownloads(true)}catch(e){toast(e.message,'fa-times-circle',2000)}};
+$('dlAddBtn').onclick=function(){dlData.push({id:null,name:'新项目',url:'#',enabled:true});renderDlAdmin()};
+$('dlSaveBtn').onclick=async function(){
+ const btn=this;if(btn.dataset.busy==='1')return;btn.dataset.busy='1';const my=++dlOpSeq;
+ const items=[];dlData.forEach(function(item,i){const n=$('dlName'+i),u=$('dlUrl'+i);if(n)items.push({id:item.id!=null?item.id:null,name:(n.value.trim()||'未命名'),url:(u?(u.value.trim()||'#'):'#'),enabled:item.enabled!==false})});
+ try{
+  const r=await call('/admin/downloads',{method:'PUT',body:JSON.stringify({items})});
+  if(my!==dlOpSeq)return;
+  if(r.downloads)dlData=r.downloads;
+  renderDlAdmin();renderPublicDownloads();broadcastDl();
+  toast('下载链接已保存','fa-check-circle',2000);
+ }catch(e){if(my!==dlOpSeq)return;toast(e.message,'fa-times-circle',2000)}
+ btn.dataset.busy='0';
+};
+/* 跨标签页同步：任一页面保存/切换后广播，其它标签页自动拉最新数据，避免旧页面把新改动覆盖回去 */
+let bcDl=null;try{if('BroadcastChannel' in window){bcDl=new BroadcastChannel('zy-dl-sync');bcDl.onmessage=function(ev){if(!ev.data||ev.data.t!=='dl')return;if(!user||user.role!=='admin')return;if(!$('adminPanel').classList.contains('active'))return;if(adminEditingDl())return;dlSync()}}}catch(e){}
+function broadcastDl(){try{if(bcDl)bcDl.postMessage({t:'dl'})}catch(e){}}
+function adminEditingDl(){const a=document.activeElement;return !!(a&&a.id&&/^dl(Name|Url)\d+$/.test(a.id))}
+async function dlSync(){try{const d=await call('/admin/downloads');if(!d||!d.downloads)return;dlData=d.downloads;renderDlAdmin();renderPublicDownloads()}catch(e){}}
+function refreshAdminOnFocus(){if(!user||user.role!=='admin')return;if(!$('adminPanel').classList.contains('active'))return;if(adminEditingDl())return;dlSync()}
+window.addEventListener('focus',refreshAdminOnFocus);
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')refreshAdminOnFocus()});
 
 let verifyResolve=null;
 function showVerifyModal(reason){$('verifyReason').textContent=reason||'请再次输入管理员密码确认操作';$('verifyPass').value='';$('verifyError').classList.remove('show');$('verifyModal').classList.add('active');setTimeout(()=>$('verifyPass').focus(),100);return new Promise((resolve,reject)=>{verifyResolve={resolve,reject}})}
