@@ -348,39 +348,71 @@ export default {
         return json({ downloads: results });
       }
 
-      // === 管理员更新下载链接 ===
+      // === 管理员切换单个下载项（按 id 精准翻转，不再整表覆盖，返回最新列表） ===
+      if (path === '/api/admin/downloads/toggle' && method === 'PUT') {
+        const u = await getUser();
+        if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
+        const { id, enabled } = body;
+        if (id === undefined || id === null) return json({ error: '参数错误' }, 400);
+        await ensureDownloadsEnabledColumn();
+        const row = await env.DB.prepare('SELECT id, name FROM downloads WHERE id = ?').bind(Number(id)).first();
+        if (!row) return json({ error: '该项不存在，请刷新页面' }, 404);
+        const e = enabled ? 1 : 0;
+        await env.DB.prepare('UPDATE downloads SET enabled = ? WHERE id = ?').bind(e, row.id).run();
+        await log(u, 'update', '下载链接: ' + row.name + ': ' + (e ? '已启用' : '已禁用'));
+        const after = (await env.DB.prepare('SELECT id, name, url, enabled FROM downloads ORDER BY sort_order ASC, id ASC').all()).results || [];
+        return json({ success: true, downloads: after });
+      }
+
+      // === 管理员保存全部下载链接（按 id 合并 + 批量事务，返回最新列表） ===
       if (path === '/api/admin/downloads' && method === 'PUT') {
         const u = await getUser();
         if (!u || !(await isAdmin(u))) return json({ error: '无权限' }, 403);
         const { items } = body;
         if (!items || !Array.isArray(items)) return json({ error: '参数错误' }, 400);
         await ensureDownloadsEnabledColumn();
-        const oldItems = (await env.DB.prepare('SELECT name, url, enabled FROM downloads ORDER BY sort_order ASC, id ASC').all()).results || [];
-        await env.DB.prepare('DELETE FROM downloads').run();
-        // 逐项对比变更
-        let dlChanges = [];
-        for (let i = 0; i < items.length; i++) {
-          const item = items[i];
-          const enabled = item.enabled === undefined ? 1 : (item.enabled ? 1 : 0);
-          await env.DB.prepare('INSERT INTO downloads (name, url, sort_order, enabled) VALUES (?,?,?,?)').bind(item.name || '未命名', item.url || '#', i, enabled).run();
-          const old = oldItems[i];
-          if (!old) {
-            dlChanges.push('新增 ' + (item.name || '未命名'));
+        const before = (await env.DB.prepare('SELECT id, name, url, enabled FROM downloads ORDER BY sort_order ASC, id ASC').all()).results || [];
+        const byId = new Map(before.map(function(r) { return [r.id, r]; }));
+        const stmts = [];
+        const kept = new Set();
+        let seq = 0;
+        for (let k = 0; k < items.length; k++) {
+          const it = items[k] || {};
+          const name = String(it.name == null ? '' : it.name).trim() || '未命名';
+          const url = String(it.url == null ? '' : it.url).trim() || '#';
+          const enabled = it.enabled === undefined ? 1 : (it.enabled ? 1 : 0);
+          const id = it.id != null ? Number(it.id) : null;
+          if (id && byId.has(id)) {
+            stmts.push(env.DB.prepare('UPDATE downloads SET name = ?, url = ?, enabled = ?, sort_order = ? WHERE id = ?').bind(name, url, enabled, seq, id));
+            kept.add(id);
           } else {
-            let c = [];
-            if (old.name !== item.name) c.push('改名 ' + item.name);
-            if (old.url !== item.url) c.push('URL');
-            if (old.enabled !== enabled) c.push(enabled ? '已启用' : '已禁用');
-            if (c.length) dlChanges.push((item.name || '未命名') + ': ' + c.join('，'));
+            stmts.push(env.DB.prepare('INSERT INTO downloads (name, url, sort_order, enabled) VALUES (?,?,?,?)').bind(name, url, seq, enabled));
           }
+          seq++;
         }
-        // 检查被删除的项
-        if (items.length < oldItems.length) {
-          dlChanges.push('删除了 ' + (oldItems.length - items.length) + ' 项');
+        for (let k = 0; k < before.length; k++) {
+          if (!kept.has(before[k].id)) stmts.push(env.DB.prepare('DELETE FROM downloads WHERE id = ?').bind(before[k].id));
         }
+        if (stmts.length) await env.DB.batch(stmts);
+        const after = (await env.DB.prepare('SELECT id, name, url, enabled FROM downloads ORDER BY sort_order ASC, id ASC').all()).results || [];
+        // 变更摘要（按 id 逐行对比）
+        const afterMap = new Map(after.map(function(r) { return [r.id, r]; }));
+        const dlChanges = [];
+        for (let k = 0; k < after.length; k++) {
+          const r = after[k];
+          const old = byId.get(r.id);
+          if (!old) { dlChanges.push('新增 ' + r.name); continue; }
+          const c = [];
+          if ((old.name || '') !== (r.name || '')) c.push('改名 ' + r.name);
+          if ((old.url || '#') !== (r.url || '#')) c.push('URL');
+          if ((old.enabled ? 1 : 0) !== (r.enabled ? 1 : 0)) c.push(r.enabled ? '已启用' : '已禁用');
+          if (c.length) dlChanges.push(r.name + ': ' + c.join('，'));
+        }
+        const delCount = before.filter(function(b) { return !afterMap.has(b.id); }).length;
+        if (delCount > 0) dlChanges.push('删除了 ' + delCount + ' 项');
         if (!dlChanges.length) dlChanges.push('无变动');
         await log(u, 'update', '下载链接: ' + dlChanges.join('; '));
-        return json({ success: true });
+        return json({ success: true, downloads: after });
       }
 
       return json({ error: 'Not found' }, 404);
