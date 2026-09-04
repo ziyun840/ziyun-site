@@ -15,6 +15,8 @@
 --shadow:0 1px 3px rgba(0,0,0,.05);--shadow-md:0 4px 16px rgba(0,0,0,.06);--shadow-lg:0 12px 40px rgba(0,0,0,.08);
 --nav-bg:rgba(245,245,245,.88);--inp-bg:#F0F0F2;--inp-focus:#FFFFFF;--inp-border:rgba(0,0,0,.08);
 --toast-bg:rgba(24,24,24,.92);--toast-text:#FFFFFF;
+--card-radius:28px;--card-max-w:480px;
+--btn-radius:10px;--btn-pad:10px 20px;
 }
 [data-theme="dark"]{
 --primary:#3399FF;--primary-soft:rgba(51,153,255,.1);--primary-mid:rgba(51,153,255,.18);--primary-glow:rgba(51,153,255,.1);
@@ -62,7 +64,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 @keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes marquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
-@keyframes typeCursor{0%,100%{border-right-color:var(--primary)}50%{border-right-color:transparent}}
+@keyframes cardFloat{0%,100%{transform:translateY(0px)}50%{transform:translateY(-6px)}}
+@keyframes cardGlow{0%,100%{box-shadow:0 8px 40px rgba(0,125,255,.08),0 0 0 1px var(--border)}50%{box-shadow:0 12px 56px rgba(0,125,255,.18),0 0 0 1px var(--primary-mid)}}
 
 /* ===== Scroll Anim ===== */
 .anim-on-scroll{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
@@ -72,7 +75,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
 /* ===== Navigation ===== */
 .top-nav{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;background:var(--nav-bg);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid var(--border);transition:background .3s}
 .nav-inner{max-width:1200px;margin:0 auto;height:100%;padding:0 24px;display:flex;align-items:center;justify-content:space-between}
-.nav-logo{display:flex;align-items:center;gap:10px;font-size:1.15rem;font-weight:700;letter-spacing:.5px;user-select:none;text-decoration:none}
+.nav-logo{display:flex;align-items:center;gap:10px;font-size:1.15rem;font-weight:700;letter-spacing:.5px;user-select:none;text-decoration:none;cursor:default}
 .nav-logo i{font-size:1.1rem;color:var(--primary);animation:logoPulse 4s ease-in-out infinite}
 .nav-logo .gradient-title{background:linear-gradient(135deg,var(--primary),#7B61FF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .nav-right{display:flex;align-items:center;gap:10px}
@@ -95,11 +98,21 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
 .bg-btn:hover{border-color:var(--primary);color:var(--primary)}
 .bg-btn .active-dot{position:absolute;bottom:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:var(--green);border:2px solid var(--nav-bg);display:none}
 .bg-btn .active-dot.show{display:block}
-.admin-badge{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:.85rem;font-weight:500;color:var(--text-2);cursor:pointer;user-select:none;transition:all .2s}
+.admin-badge{display:flex;align-items:center;gap:7px;padding:6px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-size:.85rem;font-weight:500;color:var(--text-2);cursor:pointer;user-select:none;transition:all .2s;position:relative}
 .admin-badge:hover{border-color:var(--primary);color:var(--primary)}
 .admin-badge .crown{color:var(--gold);font-size:.75rem}
 .nav-flow{position:absolute;bottom:-1px;left:0;right:0;height:2px;overflow:hidden}
 .nav-flow::after{content:'';position:absolute;bottom:0;width:160px;height:100%;background:linear-gradient(90deg,transparent,var(--primary),transparent);animation:flowLight 4.5s linear infinite}
+
+/* ===== 右上角右键菜单 ===== */
+.context-menu{display:none;position:fixed;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);z-index:300;min-width:170px;padding:6px 0;animation:fadeInUp .15s ease-out}
+.context-menu.active{display:block}
+.context-menu-item{display:flex;align-items:center;gap:10px;padding:10px 18px;font-size:.85rem;color:var(--text-2);cursor:pointer;transition:all .15s;font-family:inherit;border:none;background:transparent;width:100%;text-align:left}
+.context-menu-item:hover{background:var(--primary-soft);color:var(--primary)}
+.context-menu-item i{width:18px;text-align:center;font-size:.9rem}
+.context-menu-item.danger{color:var(--red)}
+.context-menu-item.danger:hover{background:var(--red-soft);color:var(--red)}
+.context-menu-divider{height:1px;background:var(--border);margin:4px 12px}
 
 /* ===== Announcement ===== */
 .announcement-bar{position:fixed;top:56px;left:0;right:0;height:30px;background:var(--primary-soft);border-bottom:1px solid var(--border);z-index:99;display:flex;align-items:center;overflow:hidden}
@@ -130,14 +143,52 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
 .ql-item:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft);transform:translateY(-2px);box-shadow:var(--shadow-md)}
 .ql-item i{font-size:.9rem;color:var(--primary)}
 
-/* ===== Content Grid ===== */
+/* ===== Main Wrapper ===== */
 .main-wrapper{max-width:1200px;margin:0 auto;padding:0 24px 60px;position:relative;z-index:1}
-.content-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:40px}
+
+/* ===== 登录面板 ===== */
+.login-view{display:block;width:100%;max-width:var(--card-max-w);margin:30px auto 40px;animation:fadeInUp .6s ease-out}
+.login-view.hidden{display:none}
+
+.login-card{background:var(--surface);border-radius:var(--card-radius);border:1px solid var(--border);box-shadow:0 8px 40px rgba(0,0,0,.06),0 0 0 1px var(--border);padding:44px 44px 38px;transition:all .4s ease;animation:cardFloat 6s ease-in-out infinite,cardGlow 4s ease-in-out infinite;position:relative;overflow:hidden}
+.login-card::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 20%,var(--primary-soft),transparent 50%);pointer-events:none;opacity:.4}
+.login-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),#7B61FF,var(--primary));background-size:200% 100%;animation:flowLight 4s linear infinite}
+
+.login-header{text-align:center;margin-bottom:30px;position:relative;z-index:1}
+.login-header .icon-wrap{display:inline-flex;align-items:center;justify-content:center;width:68px;height:68px;border-radius:22px;background:var(--primary-soft);color:var(--primary);font-size:2rem;margin-bottom:14px;animation:gentleGlow 4s ease-in-out infinite}
+.login-header h2{font-size:1.6rem;font-weight:700;color:var(--text-1);letter-spacing:.3px}
+.login-header p{font-size:.9rem;color:var(--text-3);margin-top:4px}
+
+.login-card .fg{margin-bottom:18px;position:relative;z-index:1}
+.login-card .fg label{display:block;font-size:.82rem;font-weight:600;color:var(--text-2);margin-bottom:5px;letter-spacing:.3px}
+.login-card .fg input{width:100%;padding:14px 18px;background:var(--inp-bg);border:1.5px solid var(--inp-border);border-radius:12px;font-size:.95rem;color:var(--text-1);outline:none;transition:all .25s;font-family:inherit}
+.login-card .fg input:focus{background:var(--inp-focus);border-color:var(--primary);box-shadow:0 0 0 4px var(--primary-glow)}
+.login-card .fg input::placeholder{color:var(--text-4)}
+.login-card .input-wrap{position:relative}
+.login-card .input-wrap input{padding-right:48px}
+.login-card .pw-toggle{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--text-3);cursor:pointer;font-size:1.1rem;padding:4px;opacity:.6;transition:opacity .2s}
+.login-card .pw-toggle:hover{opacity:1}
+
+.login-card .btn-row{display:flex;gap:12px;margin-bottom:16px;position:relative;z-index:1}
+.login-card .btn{padding:13px 22px;border-radius:12px;border:none;font-weight:600;font-size:.92rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;transition:all .2s;font-family:inherit;letter-spacing:.2px;flex:1}
+.login-card .btn:active{transform:scale(.97)}
+.login-card .btn-login{background:var(--primary);color:#fff;box-shadow:0 2px 12px var(--primary-glow)}
+.login-card .btn-login:hover{box-shadow:0 4px 20px rgba(0,125,255,.3);filter:brightness(1.08);transform:translateY(-1px)}
+.login-card .btn-register{background:var(--surface);color:var(--text-2);border:1.5px solid var(--border-strong)}
+.login-card .btn-register:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+
+.login-card .status-msg{margin-top:4px;padding:12px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--border);font-size:.88rem;color:var(--text-2);min-height:48px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative;z-index:1}
+.login-card .status-msg i{font-size:.95rem}
+
+/* ===== 下载中心面板 ===== */
+.download-view{display:none;width:100%;animation:fadeInUp .5s ease-out}
+.download-view.active{display:block}
+.download-view .dl-section{max-width:800px;margin:0 auto}
+
 .section-title{font-size:1.2rem;font-weight:600;color:var(--text-1);display:flex;align-items:center;gap:10px;margin-bottom:6px}
 .section-title i{color:var(--primary);font-size:1rem}
 .section-desc{font-size:.88rem;color:var(--text-3);margin-bottom:24px}
 
-/* ===== Downloads ===== */
 .dl-items{display:flex;flex-direction:column;gap:2px}
 .dl-item{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-radius:12px;border:1px solid var(--border);background:var(--surface);transition:all .25s ease;gap:12px}
 .dl-item:hover{border-color:var(--primary);background:var(--primary-soft);transform:translateX(3px);box-shadow:var(--shadow-md)}
@@ -154,36 +205,14 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
 .dl-link{display:inline-flex;align-items:center;gap:7px;padding:8px 20px;border-radius:10px;background:var(--primary-soft);color:var(--primary);font-weight:500;font-size:.85rem;text-decoration:none;border:1px solid rgba(0,125,255,.15);cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
 .dl-link:hover{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 4px 12px var(--primary-glow)}
 
-/* ===== Account ===== */
-.fg{margin-bottom:18px}
-.fg label{display:block;font-size:.82rem;font-weight:600;color:var(--text-2);margin-bottom:6px;letter-spacing:.3px}
-.fg input,.fg select{width:100%;padding:13px 16px;background:var(--inp-bg);border:1.5px solid var(--inp-border);border-radius:10px;font-size:.95rem;color:var(--text-1);outline:none;transition:all .25s;font-family:inherit}
-.fg input:focus,.fg select:focus{background:var(--inp-focus);border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
-.fg input::placeholder{color:var(--text-4)}
-.input-wrap{position:relative}
-.input-wrap input{padding-right:44px}
-.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--text-3);cursor:pointer;font-size:1rem;padding:4px;opacity:.6;transition:opacity .2s}
-.pw-toggle:hover{opacity:1}
-.btn-row{display:flex;gap:12px;margin-bottom:16px}
-.btn{padding:12px 22px;border-radius:10px;border:none;font-weight:600;font-size:.92rem;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;transition:all .2s;font-family:inherit;letter-spacing:.2px}
-.btn:active{transform:scale(.97)}
-.btn-login{background:var(--primary);color:#fff;flex:1;box-shadow:0 2px 8px var(--primary-glow)}
-.btn-login:hover{box-shadow:0 4px 16px rgba(0,125,255,.25);filter:brightness(1.08)}
-.btn-register{background:var(--surface);color:var(--text-2);flex:1;border:1.5px solid var(--border-strong)}
-.btn-register:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
-.btn-logout{width:100%;background:transparent;color:var(--text-3);border:1.5px solid var(--border);font-weight:500}
-.btn-logout:hover{border-color:var(--red);color:var(--red);background:var(--red-soft)}
-.status-msg{margin-top:4px;padding:12px 16px;border-radius:10px;background:var(--surface);border:1px solid var(--border);font-size:.88rem;color:var(--text-2);min-height:46px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-
-/* ===== Skeleton ===== */
 .skeleton-item{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:12px;border:1px solid var(--border);background:var(--surface)}
 .sk-icon{width:28px;height:28px;border-radius:8px;background:linear-gradient(90deg,var(--border) 25%,var(--surface-hover) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
 .sk-line{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--border) 25%,var(--surface-hover) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
 .sk-btn{width:72px;height:32px;border-radius:10px;background:linear-gradient(90deg,var(--border) 25%,var(--surface-hover) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;flex-shrink:0}
 
-/* ===== Admin ===== */
-.admin-panel{display:none;margin-top:8px;padding:32px 0;animation:fadeInUp .4s ease-out}
-.admin-panel.active{display:block}
+/* ===== 管理员面板 ===== */
+.admin-view{display:none;width:100%;padding:8px 0 32px;animation:fadeInUp .4s ease-out}
+.admin-view.active{display:block}
 .admin-panel-title{font-size:1.3rem;font-weight:700;color:var(--text-1);display:flex;align-items:center;gap:10px;margin-bottom:28px;padding-bottom:16px;border-bottom:1px solid var(--border)}
 .admin-panel-title i{color:var(--primary)}
 .admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
@@ -219,12 +248,29 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
 .badge-log.logout{background:var(--red-soft);color:var(--red)}
 .badge-log.update{background:var(--green-soft);color:var(--green)}
 .ip-tag{font-family:'SF Mono','Cascadia Code','Courier New',monospace;font-size:.78rem;color:var(--text-3)}
-.btn-sm{padding:6px 14px;font-size:.82rem;border-radius:8px;border:1px solid var(--border);background:var(--surface);cursor:pointer;color:var(--text-2);font-weight:500;transition:all .2s;font-family:inherit}
-.btn-sm:hover{border-color:var(--primary);color:var(--primary)}
-.btn-sm.danger{color:var(--red);border-color:rgba(255,68,68,.2)}
-.btn-sm.danger:hover{background:var(--red-soft);border-color:var(--red)}
 .recent-log{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:.88rem;color:var(--text-2)}
 .recent-log i{margin-right:8px;color:var(--primary)}
+.sep{height:2px;background:var(--border);margin:32px 0;position:relative;overflow:hidden;border-radius:2px}
+.sep::after{content:'';position:absolute;top:0;left:0;width:100px;height:100%;background:linear-gradient(90deg,var(--primary),transparent);animation:flowLight 7s linear infinite}
+
+/* ===== 优化后的按钮样式 ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:var(--btn-pad);border-radius:var(--btn-radius);font-weight:600;font-size:.88rem;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1);font-family:inherit;border:none;text-decoration:none;position:relative;overflow:hidden;white-space:nowrap}
+.btn:active{transform:scale(.96)}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 2px 8px var(--primary-glow)}
+.btn-primary:hover{box-shadow:0 4px 20px rgba(0,125,255,.3);filter:brightness(1.06);transform:translateY(-1px)}
+.btn-secondary{background:var(--surface);color:var(--text-2);border:1.5px solid var(--border-strong)}
+.btn-secondary:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft);transform:translateY(-1px)}
+.btn-success{background:var(--green);color:#fff;box-shadow:0 2px 8px rgba(0,181,120,.2)}
+.btn-success:hover{box-shadow:0 4px 16px rgba(0,181,120,.3);filter:brightness(1.06);transform:translateY(-1px)}
+.btn-danger{background:transparent;color:var(--red);border:1.5px solid rgba(255,68,68,.2)}
+.btn-danger:hover{background:var(--red-soft);border-color:var(--red);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+.btn-sm{padding:6px 14px;font-size:.78rem;border-radius:8px}
+.btn-xs{padding:4px 12px;font-size:.72rem;border-radius:6px}
+.btn-icon{width:36px;height:36px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
+.btn-icon-sm{width:30px;height:30px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem}
+
 .admin-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 .admin-section-label{font-size:.88rem;font-weight:600;color:var(--text-2);margin:24px 0 12px;display:flex;align-items:center;gap:8px}
 .admin-section-label i{color:var(--primary)}
@@ -237,8 +283,13 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
 .toggle-slider::before{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
 .toggle-switch input:checked+.toggle-slider{background:var(--green)}
 .toggle-switch input:checked+.toggle-slider::before{transform:translateX(16px)}
-.sep{height:2px;background:var(--border);margin:32px 0;position:relative;overflow:hidden;border-radius:2px}
-.sep::after{content:'';position:absolute;top:0;left:0;width:100px;height:100%;background:linear-gradient(90deg,var(--primary),transparent);animation:flowLight 7s linear infinite}
+
+/* ===== 可拖动返回按钮 ===== */
+.float-back{position:fixed;bottom:130px;right:28px;width:44px;height:44px;border-radius:50%;background:var(--surface);color:var(--text-2);border:1.5px solid var(--border);cursor:grab;font-size:1.1rem;display:none;align-items:center;justify-content:center;z-index:999;box-shadow:var(--shadow-md);transition:all .2s;user-select:none;touch-action:none}
+.float-back.show{display:flex}
+.float-back:hover{border-color:var(--primary);color:var(--primary);box-shadow:var(--shadow-lg)}
+.float-back:active{cursor:grabbing}
+.float-back i{pointer-events:none}
 
 /* ===== Footer ===== */
 .site-footer{margin-top:40px}
@@ -277,10 +328,6 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
 .back-to-top{position:fixed;bottom:28px;right:28px;width:42px;height:42px;border-radius:12px;background:var(--surface);color:var(--text-2);border:1px solid var(--border);cursor:pointer;font-size:1rem;display:none;align-items:center;justify-content:center;z-index:100;box-shadow:var(--shadow-md);transition:all .25s}
 .back-to-top.show{display:flex}
 .back-to-top.show:hover{border-color:var(--primary);color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
-.float-exit{position:fixed !important;bottom:82px;right:28px;width:42px;height:42px;border-radius:12px;background:var(--surface);color:var(--text-2);border:1px solid var(--border);cursor:grab;font-size:1rem;display:none;align-items:center;justify-content:center;z-index:999999;box-shadow:var(--shadow-md);transition:all .2s;user-select:none}
-.float-exit.show{display:flex}
-.float-exit.show:hover{border-color:var(--primary);color:var(--primary);box-shadow:var(--shadow-lg)}
-.float-exit:active{cursor:grabbing}
 
 /* ===== Modals ===== */
 .chart-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);z-index:1000;align-items:center;justify-content:center;padding:20px}
@@ -311,8 +358,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
 .tilt-hover{transition:transform .25s ease;transform-style:preserve-3d}
 
 /* ===== Responsive ===== */
-@media(max-width:820px){.content-grid{grid-template-columns:1fr;gap:32px}.hero{padding:36px 20px 24px}.hero-greeting{font-size:1.4rem}.nav-inner{padding:0 16px}.main-wrapper{padding:0 16px 48px}.admin-stats{grid-template-columns:1fr 1fr}.quick-links{padding:0 16px}}
-@media(max-width:600px){.hero{padding:28px 16px 20px}.hero-right{gap:10px}.hero-status,.hero-online,.hero-clock,.hero-date{font-size:.75rem}.hero-greeting{font-size:1.2rem}.hero-icon{font-size:1.8rem}.btn-row{flex-direction:column}.nav-logo{font-size:1rem}.theme-toggle span{display:none}.admin-stats{grid-template-columns:1fr}.bg-picker{min-width:260px;right:-10px}.quick-links{gap:8px}.ql-item{padding:8px 14px;font-size:.82rem}}
+@media(max-width:820px){.hero{padding:36px 20px 24px}.hero-greeting{font-size:1.4rem}.nav-inner{padding:0 16px}.main-wrapper{padding:0 16px 48px}.admin-stats{grid-template-columns:1fr 1fr}.quick-links{padding:0 16px}.login-card{padding:32px 28px 30px}}
+@media(max-width:600px){.hero{padding:28px 16px 20px}.hero-right{gap:10px}.hero-status,.hero-online,.hero-clock,.hero-date{font-size:.75rem}.hero-greeting{font-size:1.2rem}.hero-icon{font-size:1.8rem}.btn-row{flex-direction:column}.nav-logo{font-size:1rem}.theme-toggle span{display:none}.admin-stats{grid-template-columns:1fr}.bg-picker{min-width:260px;right:-10px}.quick-links{gap:8px}.ql-item{padding:8px 14px;font-size:.82rem}.login-card{padding:24px 20px 24px}.login-header h2{font-size:1.3rem}.login-header .icon-wrap{width:56px;height:56px;font-size:1.6rem}.float-back{width:38px;height:38px;font-size:.95rem;bottom:110px;right:16px}.btn{padding:8px 14px;font-size:.8rem}.btn-sm{padding:4px 10px;font-size:.7rem}}
 </style>
 </head>
 <body>
@@ -355,6 +402,16 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
  <div class="nav-flow"></div>
 </nav>
 
+<!-- 右键菜单 -->
+<div class="context-menu" id="contextMenu">
+ <div class="context-menu-item" id="menuSwitchAccount"><i class="fas fa-exchange-alt"></i> 切换账户</div>
+ <div class="context-menu-divider"></div>
+ <div class="context-menu-item danger" id="menuLogout"><i class="fas fa-sign-out-alt"></i> 退出登录</div>
+</div>
+
+<!-- 可拖动返回按钮 -->
+<button class="float-back" id="floatBackBtn" title="返回主页面"><i class="fas fa-arrow-left"></i></button>
+
 <!-- Announcement -->
 <div class="announcement-bar"><div class="announcement-inner"><i class="fas fa-bullhorn"></i> 欢迎访问子云专属网站！本站基于 Cloudflare Pages + D1 构建 · 如有问题请联系管理员 · 祝您使用愉快！</div></div>
 
@@ -386,83 +443,125 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
 
 <!-- Main Content -->
 <div class="main-wrapper">
- <div id="normalView" class="content-grid">
+
+ <!-- ===== 登录面板 ===== -->
+ <div class="login-view" id="loginView">
+  <div class="login-card">
+   <div class="login-header">
+    <div class="icon-wrap"><i class="fas fa-user-astronaut"></i></div>
+    <h2>欢迎登录</h2>
+    <p>进入子云专属空间，享受云端服务</p>
+   </div>
+   <div class="fg"><label>用户名</label><input type="text" id="userInput" placeholder="请输入用户名"></div>
+   <div class="fg"><label>密码</label><div class="input-wrap"><input type="password" id="passInput" placeholder="请输入密码"><button class="pw-toggle" id="pwToggle" type="button">👁️</button></div></div>
+   <div class="btn-row">
+    <button class="btn btn-secondary" id="regBtn"><i class="fas fa-pen"></i> 注册</button>
+    <button class="btn btn-primary" id="loginBtn"><i class="fas fa-sign-in-alt"></i> 登录</button>
+   </div>
+   <div class="status-msg" id="statusMessage"><i class="fas fa-comment-dots"></i> <span id="statusText">请输入用户名和密码</span></div>
+  </div>
+ </div>
+
+ <!-- ===== 下载中心面板 ===== -->
+ <div class="download-view" id="downloadView">
   <section class="dl-section anim-on-scroll">
    <div class="section-title"><i class="fas fa-download"></i> 下载中心</div>
    <div class="section-desc">登录后点击下载，跳转蓝奏云</div>
    <div class="dl-items" id="downloadList"><div class="skeleton-item"><div class="sk-icon"></div><div class="sk-line" style="flex:1;height:14px"></div><div class="sk-btn"></div></div><div class="skeleton-item"><div class="sk-icon"></div><div class="sk-line" style="flex:1;height:14px"></div><div class="sk-btn"></div></div><div class="skeleton-item"><div class="sk-icon"></div><div class="sk-line" style="flex:1;height:14px"></div><div class="sk-btn"></div></div></div>
   </section>
-  <section class="ac-section anim-on-scroll anim-d2">
-   <div class="section-title"><i class="fas fa-user-circle"></i> 账户</div>
-   <div style="height:8px"></div>
-   <div class="fg"><label>用户名</label><input type="text" id="userInput" placeholder="请输入用户名"></div>
-   <div class="fg"><label>密码</label><div class="input-wrap"><input type="password" id="passInput" placeholder="请输入密码"><button class="pw-toggle" id="pwToggle" type="button">👁️</button></div></div>
-   <div class="btn-row">
-    <button class="btn btn-register" id="regBtn"><i class="fas fa-pen"></i> 注册</button>
-    <button class="btn btn-login" id="loginBtn"><i class="fas fa-sign-in-alt"></i> 登录</button>
+  <footer class="site-footer anim-on-scroll anim-d3" id="contact">
+   <div class="contact-section">
+    <div class="contact-items">
+     <div class="contact-item"><i class="fas fa-envelope"></i> <a href="mailto:gym123vip123@163.com">gym123vip123@163.com</a></div>
+     <div class="contact-item"><i class="fas fa-phone"></i> <a href="tel:13738643585">13738643585</a></div>
+    </div>
    </div>
-   <div class="status-msg" id="statusMessage"><i class="fas fa-comment-dots"></i> <span id="statusText">请输入用户名和密码</span></div>
-   <div style="margin-top:14px"><button class="btn btn-logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出登录</button></div>
-  </section>
+   <div class="info-strip">
+    <span><i class="fas fa-server"></i> 托管：Cloudflare Pages</span>
+    <span><i class="fas fa-database"></i> 数据库：D1 SQLite</span>
+    <span><i class="fas fa-globe-asia"></i> 节点：中国浙江台州</span>
+    <span><i class="fas fa-code"></i> 前端：纯原生</span>
+   </div>
+   <div class="footer-note"><i class="fas fa-shield-alt"></i> 子云专属 · D1云端版</div>
+   <div class="poem-bar" id="poemBar"><i class="fas fa-feather-alt"></i> <span id="poemText"></span></div>
+  </footer>
  </div>
 
- <div class="admin-panel" id="adminPanel">
+ <!-- ===== 管理员面板 ===== -->
+ <div class="admin-view" id="adminView">
   <div class="admin-panel-title"><i class="fas fa-sliders-h"></i> 管理员控制面板</div>
+
   <div class="admin-stats"><div class="stat-card" id="statUsers"></div><div class="stat-card" id="statOps"></div><div class="stat-card" id="statTraffic"></div></div>
+
   <div class="admin-toolbar">
    <div class="search-box"><i class="fas fa-search"></i><input type="text" id="logSearch" placeholder="搜索日志..."></div>
-   <div class="filter-group" id="logFilters"><button class="filter-btn active" data-fl="all">全部</button><button class="filter-btn" data-fl="login">登录</button><button class="filter-btn" data-fl="register">注册</button><button class="filter-btn" data-fl="admin">管理</button><button class="filter-btn" data-fl="download">下载</button></div>
+   <div class="filter-group" id="logFilters">
+    <button class="filter-btn active" data-fl="all">全部</button>
+    <button class="filter-btn" data-fl="login">登录</button>
+    <button class="filter-btn" data-fl="register">注册</button>
+    <button class="filter-btn" data-fl="admin">管理</button>
+    <button class="filter-btn" data-fl="download">下载</button>
+   </div>
   </div>
+
   <div class="log-table-wrap"><table class="log-table"><thead><tr><th>时间</th><th>用户</th><th>操作</th><th>IP</th><th>详情</th></tr></thead><tbody id="logBody"></tbody></table></div>
-  <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
-   <div class="recent-log" style="flex:1"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
-   <button class="btn-sm danger" id="clearLogsBtn" style="flex-shrink:0;white-space:nowrap"><i class="fas fa-trash-alt"></i> 清空日志</button>
+
+  <div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap">
+   <div class="recent-log" style="flex:1;min-width:120px"><i class="fas fa-history"></i> <span id="recentText">加载中...</span></div>
+   <button class="btn btn-danger btn-sm" id="clearLogsBtn"><i class="fas fa-trash-alt"></i> 清空日志</button>
   </div>
+
   <div class="admin-actions">
-   <button class="btn btn-login" id="chartBtn" style="flex:none"><i class="fas fa-chart-line"></i> 趋势图</button>
-   <button class="btn btn-register" id="refreshBtn" style="flex:none"><i class="fas fa-sync"></i> 刷新</button>
+   <button class="btn btn-primary" id="chartBtn"><i class="fas fa-chart-line"></i> 趋势图</button>
+   <button class="btn btn-secondary" id="refreshBtn"><i class="fas fa-sync"></i> 刷新</button>
   </div>
+
   <div class="sep"></div>
+
   <div class="admin-section-label"><i class="fas fa-edit"></i> 用户管理</div>
-  <div style="margin-bottom:12px"><select id="userSelect" style="width:100%;padding:11px 14px;border-radius:10px;background:var(--inp-bg);border:1.5px solid var(--inp-border);color:var(--text-1);font-size:.92rem;font-family:inherit;outline:none;cursor:pointer"><option value="">— 选择用户 —</option></select></div>
+  <div style="margin-bottom:12px">
+   <select id="userSelect" style="width:100%;padding:11px 14px;border-radius:10px;background:var(--inp-bg);border:1.5px solid var(--inp-border);color:var(--text-1);font-size:.92rem;font-family:inherit;outline:none;cursor:pointer">
+    <option value="">— 选择用户 —</option>
+   </select>
+  </div>
   <div id="editForm" style="display:none" class="edit-form-wrap">
    <div class="fg"><label>用户名</label><input class="edit-input" id="editUser" placeholder="新用户名"></div>
    <div class="fg"><label>密码</label><input class="edit-input" id="editPass" placeholder="新密码" type="text"></div>
-   <div class="fg"><label>角色</label><select id="editRole" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--inp-bg);border:1.5px solid var(--inp-border);color:var(--text-1);font-size:.92rem;font-family:inherit;outline:none;cursor:pointer"><option value="user">普通用户</option><option value="admin">管理员</option></select></div>
-   <div style="display:flex;gap:10px"><button class="btn btn-login" id="editSaveBtn" style="flex:1"><i class="fas fa-check"></i> 保存</button><button class="btn btn-register" id="editCancelBtn" style="flex:1"><i class="fas fa-times"></i> 取消</button></div>
-  </div>
-  <div style="overflow-x:auto;margin-bottom:16px"><table class="admin-table"><thead><tr><th>用户名</th><th>角色</th><th>操作</th></tr></thead><tbody id="userBody"></tbody></table></div>
-  <div class="admin-section-label"><i class="fas fa-download"></i> 下载链接管理</div>
-  <div id="dlAdminWrap" style="margin-bottom:10px"></div>
-  <div style="display:flex;gap:10px"><button class="btn btn-register" id="dlAddBtn"><i class="fas fa-plus"></i> 添加下载项</button><button class="btn btn-login" id="dlSaveBtn"><i class="fas fa-save"></i> 保存全部</button></div>
- </div>
-
- <footer class="site-footer anim-on-scroll anim-d3" id="contact">
-  <div class="contact-section">
-   <div class="contact-items">
-    <div class="contact-item"><i class="fas fa-envelope"></i> <a href="mailto:gym123vip123@163.com">gym123vip123@163.com</a></div>
-    <div class="contact-item"><i class="fas fa-phone"></i> <a href="tel:13738643585">13738643585</a></div>
+   <div class="fg"><label>角色</label>
+    <select id="editRole" style="width:100%;padding:10px 14px;border-radius:10px;background:var(--inp-bg);border:1.5px solid var(--inp-border);color:var(--text-1);font-size:.92rem;font-family:inherit;outline:none;cursor:pointer">
+     <option value="user">普通用户</option>
+     <option value="admin">管理员</option>
+    </select>
+   </div>
+   <div style="display:flex;gap:10px">
+    <button class="btn btn-primary" id="editSaveBtn" style="flex:1"><i class="fas fa-check"></i> 保存</button>
+    <button class="btn btn-secondary" id="editCancelBtn" style="flex:1"><i class="fas fa-times"></i> 取消</button>
    </div>
   </div>
-  <div class="info-strip">
-   <span><i class="fas fa-server"></i> 托管：Cloudflare Pages</span>
-   <span><i class="fas fa-database"></i> 数据库：D1 SQLite</span>
-   <span><i class="fas fa-globe-asia"></i> 节点：中国浙江台州</span>
-   <span><i class="fas fa-code"></i> 前端：纯原生</span>
+
+  <div style="overflow-x:auto;margin-bottom:16px">
+   <table class="admin-table">
+    <thead><tr><th>用户名</th><th>角色</th><th>操作</th></tr></thead>
+    <tbody id="userBody"></tbody>
+   </table>
   </div>
-  <div class="footer-note"><i class="fas fa-shield-alt"></i> 子云专属 · D1云端版</div>
-  <div class="poem-bar" id="poemBar"><i class="fas fa-feather-alt"></i> <span id="poemText"></span></div>
- </footer>
+
+  <div class="admin-section-label"><i class="fas fa-download"></i> 下载链接管理</div>
+  <div id="dlAdminWrap" style="margin-bottom:10px"></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+   <button class="btn btn-secondary" id="dlAddBtn"><i class="fas fa-plus"></i> 添加下载项</button>
+   <button class="btn btn-primary" id="dlSaveBtn"><i class="fas fa-save"></i> 保存全部</button>
+  </div>
+ </div>
 </div>
 
-<button class="float-exit" id="exitBtn" title="返回主页面"><i class="fas fa-arrow-left"></i></button>
 <button class="back-to-top" id="backTop"><i class="fas fa-arrow-up"></i></button>
 <div class="toast-message" id="toastMsg"><i class="fas fa-info-circle"></i> <span id="toastText">提示</span></div>
 
 <div class="chart-modal" id="chartModal">
  <div class="chart-modal-content">
   <div class="chart-modal-header"><span>访客趋势 <span id="chartLiveDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;vertical-align:middle;margin-left:6px"></span></span>
-   <div style="display:flex;align-items:center;gap:10px"><div class="chart-tabs"><button class="filter-btn active" data-chart="7">7天</button><button class="filter-btn" data-chart="30">30天</button></div><button class="btn-sm" id="chartCloseBtn"><i class="fas fa-times"></i></button></div>
+   <div style="display:flex;align-items:center;gap:10px"><div class="chart-tabs"><button class="filter-btn active" data-chart="7">7天</button><button class="filter-btn" data-chart="30">30天</button></div><button class="btn btn-ghost btn-sm" id="chartCloseBtn"><i class="fas fa-times"></i></button></div>
   </div>
   <canvas id="trafficChart" width="800" height="320"></canvas>
  </div>
@@ -474,7 +573,10 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;back
   <p id="verifyReason">请再次输入管理员密码确认操作</p>
   <div class="fg"><input type="password" id="verifyPass" placeholder="请输入管理员密码" autocomplete="off"></div>
   <div class="verify-error" id="verifyError"><i class="fas fa-times-circle"></i> <span id="verifyErrorText">密码错误</span></div>
-  <div class="btn-row"><button class="btn btn-register" id="verifyCancelBtn"><i class="fas fa-times"></i> 取消</button><button class="btn btn-login" id="verifyConfirmBtn"><i class="fas fa-check"></i> 确认</button></div>
+  <div class="btn-row">
+   <button class="btn btn-secondary" id="verifyCancelBtn"><i class="fas fa-times"></i> 取消</button>
+   <button class="btn btn-primary" id="verifyConfirmBtn"><i class="fas fa-check"></i> 确认</button>
+  </div>
  </div>
 </div>
 
@@ -485,6 +587,7 @@ const $=id=>document.getElementById(id);
 const API='/api';
 let token=localStorage.getItem('zy-t')||null;
 let user=null;
+let currentView='login';
 
 async function call(path,opts){const h={'Content-Type':'application/json'};if(token)h['Authorization']='Bearer '+token;const r=await fetch(API+path,{...opts,headers:h});const d=await r.json();if(!r.ok)throw new Error(d.error||'请求失败');return d}
 
@@ -496,29 +599,97 @@ function status(m,i,c){i=i||'fa-comment-dots';c=c||'var(--text-2)';$('statusText
 
 function typewriter(el,text,cb){el.textContent='';let i=0;function t(){if(i<text.length){el.textContent+=text.charAt(i);i++;setTimeout(t,45)}else if(cb)cb()}t()}
 
-async function login(){const u=$('userInput').value.trim(),p=$('passInput').value.trim();if(!u||!p){status('请输入用户名和密码','fa-exclamation-triangle','var(--gold)');return}if(user){status('请先退出当前账号再进行登录','fa-exclamation-triangle','var(--gold)');toast('请先退出再登录','fa-exclamation-triangle',2500);return}try{const d=await call('/login',{method:'POST',body:JSON.stringify({username:u,password:p})});token=d.token;localStorage.setItem('zy-t',token);user={username:d.username,role:d.role};ui(true);$('passInput').value='';const s=user.role==='admin'?'（管理员）':'';status('欢迎回来，'+user.username+s,'fa-check-circle','var(--green)');toast('登录成功','fa-check-circle',2000)}catch(e){status(e.message,'fa-times-circle','var(--red)')}}
-async function register(){const u=$('userInput').value.trim(),p=$('passInput').value.trim();if(!u||!p){status('请输入用户名和密码','fa-exclamation-triangle','var(--gold)');return}if(u.length<3){status('用户名至少3个字符','fa-exclamation-triangle','var(--gold)');return}try{await call('/register',{method:'POST',body:JSON.stringify({username:u,password:p})});status('注册成功，请登录','fa-check-circle','var(--green)');$('passInput').value='';toast('注册成功','fa-check-circle',2000)}catch(e){status(e.message,'fa-times-circle','var(--red)')}}
-async function logout(){try{if(token)await call('/logout',{method:'POST'})}catch(e){}token=null;localStorage.removeItem('zy-t');user=null;ui();status('已退出登录','fa-sign-out-alt','var(--text-3)');$('passInput').value='';toast('已退出登录','fa-sign-out-alt',2000)}
-
-let dlData=[];
-let dlOpSeq=0;
-function escAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
-function renderPublicDownloads(){
- const list=$('downloadList');if(!list)return;list.innerHTML='';const icons=['fa-file-archive','fa-code','fa-mobile-alt','fa-cloud','fa-tools','fa-link','fa-cog','fa-star'];dlData.forEach(function(item,i){const icon=icons[i%icons.length];const hasUrl=item.url&&item.url!=='#';const enabled=item.enabled===undefined||item.enabled===1||item.enabled===true;const disabledCls=enabled?'':' style="opacity:.45"';const badge=enabled?'':' <span style="font-size:.7rem;background:var(--red-soft);color:var(--red);padding:2px 8px;border-radius:6px;margin-left:6px">已禁用</span>';list.innerHTML+='<div class="dl-item"'+disabledCls+' data-enabled="'+enabled+'"><div class="dl-info"><i class="fas '+icon+'"></i><span>'+item.name+badge+'</span></div><a href="'+(hasUrl&&enabled?item.url:'#')+'" class="dl-link" target="'+(hasUrl&&enabled?'_blank':'_self')+'" data-url="'+(item.url||'')+'" data-enabled="'+enabled+'"><i class="fas fa-external-link-alt"></i> '+(enabled?'下载':'已禁用')+'</a></div>'});
- list.onclick=function(e){const item=e.target.closest('.dl-item');if(!item||item.dataset.enabled!=='false')return;e.preventDefault();if(!user||user.role!=='admin'){let c=parseInt(localStorage.getItem('zy-dl-ban')||'0');c++;localStorage.setItem('zy-dl-ban',c);if(c>=3){toast('该下载链接已禁用，具体情况请联系管理员','fa-exclamation-triangle',4000);return}}toast('该下载已禁用','fa-ban',2000)};
- Array.prototype.forEach.call(list.querySelectorAll('.dl-link'),function(l){l.addEventListener('click',function(e){if(this.dataset.enabled==='false')return;const url=this.dataset.url;if(!url||url==='#'){e.preventDefault();toast('链接待配置','fa-exclamation-triangle',2000);return}if(!user){e.preventDefault();toast('请先登录','fa-lock',3000);return}toast('跳转链接中','fa-cloud',2000)})});
+// ===== 视图切换 =====
+function switchView(view){
+ currentView=view;
+ const loginView=$('loginView');
+ const downloadView=$('downloadView');
+ const adminView=$('adminView');
+ const floatBack=$('floatBackBtn');
+ loginView.classList.toggle('hidden',view!=='login');
+ downloadView.classList.toggle('active',view==='download');
+ adminView.classList.toggle('active',view==='admin');
+ floatBack.classList.toggle('show',view==='admin');
+ updateBadge();
 }
+
+// ===== 登录 =====
+async function login(){
+ const u=$('userInput').value.trim(),p=$('passInput').value.trim();
+ if(!u||!p){status('请输入用户名和密码','fa-exclamation-triangle','var(--gold)');return}
+ if(user){status('请先退出当前账号再进行登录','fa-exclamation-triangle','var(--gold)');toast('请先退出再登录','fa-exclamation-triangle',2500);return}
+ try{
+  const d=await call('/login',{method:'POST',body:JSON.stringify({username:u,password:p})});
+  token=d.token;localStorage.setItem('zy-t',token);
+  user={username:d.username,role:d.role};
+  const s=user.role==='admin'?'（管理员）':'';
+  status('欢迎回来，'+user.username+s,'fa-check-circle','var(--green)');
+  toast('✅ 登录成功','fa-check-circle',2000);
+  ui();
+ }catch(e){status(e.message,'fa-times-circle','var(--red)')}
+}
+
+async function register(){
+ const u=$('userInput').value.trim(),p=$('passInput').value.trim();
+ if(!u||!p){status('请输入用户名和密码','fa-exclamation-triangle','var(--gold)');return}
+ if(u.length<3){status('用户名至少3个字符','fa-exclamation-triangle','var(--gold)');return}
+ try{
+  await call('/register',{method:'POST',body:JSON.stringify({username:u,password:p})});
+  status('注册成功，请登录','fa-check-circle','var(--green)');
+  $('passInput').value='';toast('注册成功','fa-check-circle',2000);
+ }catch(e){status(e.message,'fa-times-circle','var(--red)')}
+}
+
+async function logout(){
+ try{if(token)await call('/logout',{method:'POST'})}catch(e){}
+ token=null;localStorage.removeItem('zy-t');user=null;
+ status('已退出登录','fa-sign-out-alt','var(--text-3)');
+ $('passInput').value='';toast('已退出登录','fa-sign-out-alt',2000);
+ $('contextMenu').classList.remove('active');
+ ui();
+}
+
+// ===== UI 更新 =====
+function updateBadge(){
+ const badge=$('badgeText');
+ if(user){badge.textContent=user.role==='admin'?'管理员':user.username}
+ else{badge.textContent='未登录'}
+ updateGreeting();
+}
+
+function updateGreeting(){
+ const n=new Date(),h=n.getHours();
+ let g='下午好';
+ if(h>=5&&h<12)g='早上好';
+ else if(h>=12&&h<14)g='中午好';
+ else if(h>=18)g='晚上好';
+ const un=user?user.username:'子云';
+ const suffix=user&&user.role==='admin'?'（管理员）':'';
+ typewriter($('greeting'),g+'，'+un+suffix);
+}
+
+function ui(){
+ updateBadge();
+ if(!user){switchView('login');status('请输入用户名和密码','fa-comment-dots','var(--text-3)');return;}
+ if(user.role==='admin'){switchView('admin');loadAdmin();}
+ else{switchView('download');}
+}
+
+// ===== 下载 =====
+let dlData=[];
 async function loadDownloads(adminMode){
- if(!adminMode){const list=$('downloadList');if(list){list.innerHTML='';for(let i=0;i<3;i++)list.innerHTML+='<div class="skeleton-item"><div class="sk-icon"></div><div class="sk-line" style="flex:1;height:14px"></div><div class="sk-btn"></div></div>'}}
- try{const ep=adminMode?'/admin/downloads':'/downloads';const d=await call(ep);dlData=d.downloads||[];renderPublicDownloads();if(adminMode)renderDlAdmin()}catch(e){if(!adminMode){const list=$('downloadList');if(list)list.innerHTML='<div style="text-align:center;padding:1.2rem;opacity:.4;font-size:.9rem">暂无下载项</div>'}}}
+ if(!adminMode){const list=$('downloadList');list.innerHTML='';for(let i=0;i<3;i++)list.innerHTML+='<div class="skeleton-item"><div class="sk-icon"></div><div class="sk-line" style="flex:1;height:14px"></div><div class="sk-btn"></div></div>';}
+ try{const ep=adminMode?'/admin/downloads':'/downloads';const d=await call(ep);dlData=d.downloads||[];const list=$('downloadList');list.innerHTML='';const icons=['fa-file-archive','fa-code','fa-mobile-alt','fa-cloud','fa-tools','fa-link','fa-cog','fa-star'];dlData.forEach((item,i)=>{const icon=icons[i%icons.length];const hasUrl=item.url&&item.url!=='#';const enabled=item.enabled===undefined||item.enabled===1||item.enabled===true;const disabledCls=enabled?'':' style="opacity:.45"';const badge=enabled?'':' <span style="font-size:.7rem;background:var(--red-soft);color:var(--red);padding:2px 8px;border-radius:6px;margin-left:6px">已禁用</span>';list.innerHTML+='<div class="dl-item"'+disabledCls+' data-enabled="'+enabled+'"><div class="dl-info"><i class="fas '+icon+'"></i><span>'+item.name+badge+'</span></div><a href="'+(hasUrl&&enabled?item.url:'#')+'" class="dl-link" target="'+(hasUrl&&enabled?'_blank':'_self')+'" data-url="'+(item.url||'')+'" data-enabled="'+enabled+'"><i class="fas fa-external-link-alt"></i> '+(enabled?'下载':'已禁用')+'</a></div>'});$('downloadList').onclick=function(e){const item=e.target.closest('.dl-item');if(!item||item.dataset.enabled!=='false')return;e.preventDefault();if(!user||user.role!=='admin'){let c=parseInt(localStorage.getItem('zy-dl-ban')||'0');c++;localStorage.setItem('zy-dl-ban',c);if(c>=3){toast('该下载链接已禁用，具体情况请联系管理员','fa-exclamation-triangle',4000);return}}toast('该下载已禁用','fa-ban',2000)};document.querySelectorAll('.dl-link').forEach(l=>{l.addEventListener('click',function(e){if(this.dataset.enabled==='false')return;const url=this.dataset.url;if(!url||url==='#'){e.preventDefault();toast('链接待配置','fa-exclamation-triangle',2000);return}if(!user){e.preventDefault();toast('请先登录','fa-lock',3000);return}toast('跳转链接中','fa-cloud',2000)})})}catch(e){if(!adminMode){$('downloadList').innerHTML='<div style="text-align:center;padding:1.2rem;opacity:.4;font-size:.9rem">暂无下载项</div>'}}}
 loadDownloads();
 
+// ===== 主题 =====
 let thMode=localStorage.getItem('zy-th-mode')||'auto';
 function getSystemTheme(){return window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}
 function applyTheme(){const th=thMode==='auto'?getSystemTheme():thMode;document.documentElement.setAttribute('data-theme',th);const ind=$('themeIndicator');if(ind)ind.textContent=thMode==='auto'?'跟随系统':th==='dark'?'深色模式':'浅色模式'}
 applyTheme();window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{if(thMode==='auto')applyTheme()});
 $('themeToggle').onclick=function(){if(thMode==='auto')thMode='light';else if(thMode==='light')thMode='dark';else thMode='auto';localStorage.setItem('zy-th-mode',thMode);applyTheme();const th=getSystemTheme();toast(thMode==='auto'?'跟随系统':th==='dark'?'深色模式':'浅色模式','fa-circle-half-stroke',1500)};
 
+// ===== 背景 =====
 const BG_PRESETS=[{id:'default',name:'天空蓝',type:'gradient',light:'radial-gradient(circle at 20% 30%,rgba(0,125,255,.06),#F5F5F5),linear-gradient(145deg,#F5F5F5,#EEEEF0)',dark:'radial-gradient(circle at 20% 30%,rgba(51,153,255,.08),#000000),linear-gradient(145deg,#000000,#0A0A0C)'},{id:'purple',name:'紫韵',type:'gradient',light:'radial-gradient(circle at 30% 20%,rgba(180,140,255,.15),#F5F2FF),linear-gradient(145deg,#F5F2FF,#EDE6FF)',dark:'radial-gradient(circle at 30% 20%,rgba(120,60,200,.15),#0D0818),linear-gradient(145deg,#0D0818,#1A1030)'},{id:'forest',name:'森林',type:'gradient',light:'radial-gradient(circle at 20% 30%,rgba(0,180,100,.08),#F0FAF4),linear-gradient(145deg,#F0FAF4,#E0F2E8)',dark:'radial-gradient(circle at 20% 30%,rgba(0,160,80,.1),#061208),linear-gradient(145deg,#061208,#0C2010)'},{id:'ocean',name:'海洋',type:'gradient',light:'radial-gradient(circle at 20% 30%,rgba(0,180,220,.08),#F0FAFF),linear-gradient(145deg,#F0FAFF,#E0F4FA)',dark:'radial-gradient(circle at 20% 30%,rgba(0,140,200,.1),#060E14),linear-gradient(145deg,#060E14,#0C1E2C)'},{id:'sunset',name:'落日',type:'gradient',light:'radial-gradient(circle at 30% 20%,rgba(255,160,80,.1),#FFF8F0),linear-gradient(145deg,#FFF8F0,#FFF0E0)',dark:'radial-gradient(circle at 30% 20%,rgba(200,100,40,.12),#100804),linear-gradient(145deg,#100804,#1C1008)'},{id:'rose',name:'玫瑰',type:'gradient',light:'radial-gradient(circle at 20% 30%,rgba(255,140,170,.1),#FFF5F7),linear-gradient(145deg,#FFF5F7,#FCE8EE)',dark:'radial-gradient(circle at 20% 30%,rgba(180,60,100,.1),#10040A),linear-gradient(145deg,#10040A,#1C0810)'},{id:'solid-white',name:'纯白',type:'solid',light:'#FFFFFF',dark:'#0A0A0C'},{id:'solid-warm',name:'暖灰',type:'solid',light:'#F5F0EB',dark:'#121010'},{id:'solid-navy',name:'深邃',type:'solid',light:'#E8EDF5',dark:'#040810'}];
 let currentBg=localStorage.getItem('zy-bg')||'default';
 function applyBg(id){currentBg=id;localStorage.setItem('zy-bg',id);const isDark=document.documentElement.getAttribute('data-theme')==='dark';const preset=BG_PRESETS.find(p=>p.id===id);if(preset){const bg=isDark?preset.dark:preset.light;document.body.style.background=bg;document.body.style.backgroundSize=preset.type==='gradient'?'200% 200%':''}const dot=$('bgActiveDot');if(dot)dot.classList.toggle('show',id!=='default');document.querySelectorAll('.bg-option').forEach(el=>el.classList.toggle('active',el.dataset.bg===id))}
@@ -529,6 +700,7 @@ document.querySelector('#bgPicker .bg-picker-title span:last-child').onclick=fun
 new MutationObserver(function(){applyBg(currentBg)}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 applyBg(currentBg);
 
+// ===== 时间 =====
 function updateDate(){const n=new Date();const y=n.getFullYear(),m=n.getMonth()+1,d=n.getDate();const wk=['日','一','二','三','四','五','六'];$('dateText').textContent=y+'年'+m+'月'+d+'日 星期'+wk[n.getDay()];$('dateIcon').textContent=(n.getHours()>=6&&n.getHours()<18)?'☀️':'🌙'}
 function clock(){$('liveTime').textContent=String(new Date().getHours()).padStart(2,'0')+':'+String(new Date().getMinutes()).padStart(2,'0')+':'+String(new Date().getSeconds()).padStart(2,'0');updateGreeting();updateDate()}
 clock();setInterval(clock,1000);
@@ -544,13 +716,15 @@ let selectedUser=null;
 function updateStats(s){const mk=function(el,icon,label,val,unit,max,color){const pct=Math.min(val/(max||1),1)*100;el.innerHTML='<div class="stat-head"><i class="fas '+icon+'"></i>'+label+'</div><div class="stat-value"><span class="counter" data-target="'+val+'">'+val+'</span> <small>'+unit+'</small></div><div class="stat-bar"><div class="stat-bar-fill" style="width:'+pct.toFixed(0)+'%;background:'+color+'"></div></div>';const c=el.querySelector('.counter');if(c){const num=parseFloat(val);if(!isNaN(num))animateCounter(c,num,'')}};mk($('statUsers'),'fa-users','总账户',s.totalUsers,'人',50,'var(--primary)');mk($('statOps'),'fa-user-check','今日操作',s.recentLogins,'次',30,'var(--green)');const mb=(s.trafficToday/1024/1024).toFixed(1);mk($('statTraffic'),'fa-tachometer-alt','今日流量',mb,'MB',1024,'var(--gold)')}
 
 let usersData=[];
-async function loadAdmin(){if(!user||user.role!=='admin')return;try{const s=await call('/admin/stats');updateStats(s)}catch(e){}try{const d=await call('/admin/users');usersData=d.users||[];const sel=$('userSelect');sel.innerHTML='<option value="">— 选择用户 —</option>';const tb=$('userBody');tb.innerHTML='';usersData.forEach(u=>{sel.innerHTML+='<option value="'+u.username+'">'+u.username+' ('+(u.role||'user')+')</option>';const tr=document.createElement('tr');tr.className='user-row';tr.dataset.u=u.username;const isAdm=u.role==='admin';tr.innerHTML='<td>'+u.username+'</td><td>'+(isAdm?'<span style="color:var(--gold)">管理员</span>':'普通')+'</td><td>'+(u.username!=='admin'?(isAdm?'<button class="btn-sm su" data-u="'+u.username+'" data-act="demote">降级</button> ':'<button class="btn-sm su" data-u="'+u.username+'" data-act="promote">升级</button> ')+'<button class="btn-sm danger du" data-u="'+u.username+'">删除</button>':'—')+'</td>';tb.appendChild(tr)})}catch(e){}try{await loadDownloads(true)}catch(e){}renderDlAdmin();loadLogs()}
+async function loadAdmin(){if(!user||user.role!=='admin')return;try{const s=await call('/admin/stats');updateStats(s)}catch(e){}try{const d=await call('/admin/users');usersData=d.users||[];const sel=$('userSelect');sel.innerHTML='<option value="">— 选择用户 —</option>';const tb=$('userBody');tb.innerHTML='';usersData.forEach(u=>{sel.innerHTML+='<option value="'+u.username+'">'+u.username+' ('+(u.role||'user')+')</option>';const tr=document.createElement('tr');tr.className='user-row';tr.dataset.u=u.username;const isAdm=u.role==='admin';tr.innerHTML='<td>'+u.username+'</td><td>'+(isAdm?'<span style="color:var(--gold)">管理员</span>':'普通')+'</td><td>'+(u.username!=='admin'?(isAdm?'<button class="btn btn-secondary btn-xs su" data-u="'+u.username+'" data-act="demote">降级</button> ':'<button class="btn btn-secondary btn-xs su" data-u="'+u.username+'" data-act="promote">升级</button> ')+'<button class="btn btn-danger btn-xs du" data-u="'+u.username+'">删除</button>':'—')+'</td>';tb.appendChild(tr)})}catch(e){}try{await loadDownloads(true)}catch(e){}renderDlAdmin();loadLogs()}
 
 function selectUser(name){selectedUser=name;if(!name){$('editForm').style.display='none';return}const u=(usersData||[]).find(x=>x.username===name);if(!u)return;if(name==='admin'&&(!user||user.username!=='admin')){toast('只有 admin 本人才能修改此账号','fa-lock',3000);$('userSelect').value='';$('editForm').style.display='none';selectedUser=null;return}$('editUser').value=u.username||'';$('editPass').value=u.password||'';$('editRole').value=u.role||'user';$('editForm').style.display='block'}
 async function saveEdit(){if(!selectedUser)return;try{const nu=$('editUser').value.trim(),p=$('editPass').value.trim(),r=$('editRole').value;if(!nu||nu.length<3){toast('用户名至少3个字符','fa-times-circle',2000);return}await call('/admin/users/'+encodeURIComponent(selectedUser),{method:'PUT',body:JSON.stringify({newUser:nu,password:p,role:r})});toast('已保存','fa-check-circle',1500);$('editForm').style.display='none';selectedUser=null;loadAdmin()}catch(e){toast(e.message,'fa-times-circle',2000)}}
 
 async function loadLogs(f){f=f||'all';try{const s=$('logSearch').value.trim();const d=await call('/admin/logs?filter='+f+(s?'&search='+encodeURIComponent(s):''));const tb=$('logBody');tb.innerHTML='';const am={login:'登录',logout:'退出',register:'注册',download:'下载',admin:'管理',delete:'删除',update:'修改'};let logs=d.logs||[];if(!logs.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:2rem;opacity:.4">暂无日志</td></tr>';$('recentText').textContent='暂无记录';return}logs.forEach(e=>{let t;try{t=new Date(e.created_at+'Z').toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})}catch(ex){t=e.created_at||'-'}const tr=document.createElement('tr');tr.innerHTML='<td>'+t+'</td><td>'+e.username+'</td><td><span class="badge-log '+e.action+'">'+(am[e.action]||e.action)+'</span></td><td><span class="ip-tag">'+(e.ip||'-')+'</span></td><td style="font-size:.8rem;color:var(--text-3);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+(e.detail||'')+'">'+(e.detail||'')+'</td>';tb.appendChild(tr)});$('recentText').textContent='最近: '+logs.slice(0,3).map(e=>e.username+' ('+(am[e.action]||e.action)+')').join('; ')}catch(e){}}
 
+function escAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+let dlOpSeq=0;
 function renderDlAdmin(){
  const wrap=$('dlAdminWrap');if(!wrap)return;wrap.innerHTML='';
  dlData.forEach(function(item,i){
@@ -568,7 +742,7 @@ async function toggleDlItem(i,checked){
   const r=await call('/admin/downloads/toggle',{method:'PUT',body:JSON.stringify({id:item.id,enabled:target})});
   if(my!==dlOpSeq)return;
   if(r.downloads)dlData=r.downloads;
-  renderDlAdmin();renderPublicDownloads();broadcastDl();
+  renderDlAdmin();broadcastDl();
   toast((target?'已启用：':'已禁用：')+item.name,'fa-toggle-on',1500);
  }catch(e){if(my!==dlOpSeq)return;item.enabled=wasOn;renderDlAdmin();toast('保存失败: '+e.message,'fa-times-circle',2000)}
 }
@@ -582,17 +756,17 @@ $('dlSaveBtn').onclick=async function(){
   const r=await call('/admin/downloads',{method:'PUT',body:JSON.stringify({items})});
   if(my!==dlOpSeq)return;
   if(r.downloads)dlData=r.downloads;
-  renderDlAdmin();renderPublicDownloads();broadcastDl();
+  renderDlAdmin();broadcastDl();
   toast('下载链接已保存','fa-check-circle',2000);
  }catch(e){if(my!==dlOpSeq)return;toast(e.message,'fa-times-circle',2000)}
  btn.dataset.busy='0';
 };
 /* 跨标签页同步：任一页面保存/切换后广播，其它标签页自动拉最新数据，避免旧页面把新改动覆盖回去 */
-let bcDl=null;try{if('BroadcastChannel' in window){bcDl=new BroadcastChannel('zy-dl-sync');bcDl.onmessage=function(ev){if(!ev.data||ev.data.t!=='dl')return;if(!user||user.role!=='admin')return;if(!$('adminPanel').classList.contains('active'))return;if(adminEditingDl())return;dlSync()}}}catch(e){}
+let bcDl=null;try{if('BroadcastChannel' in window){bcDl=new BroadcastChannel('zy-dl-sync');bcDl.onmessage=function(ev){if(!ev.data||ev.data.t!=='dl')return;if(!user||user.role!=='admin')return;if(currentView!=='admin')return;if(adminEditingDl())return;dlSync()}}}catch(e){}
 function broadcastDl(){try{if(bcDl)bcDl.postMessage({t:'dl'})}catch(e){}}
 function adminEditingDl(){const a=document.activeElement;return !!(a&&a.id&&/^dl(Name|Url)\d+$/.test(a.id))}
-async function dlSync(){try{const d=await call('/admin/downloads');if(!d||!d.downloads)return;dlData=d.downloads;renderDlAdmin();renderPublicDownloads()}catch(e){}}
-function refreshAdminOnFocus(){if(!user||user.role!=='admin')return;if(!$('adminPanel').classList.contains('active'))return;if(adminEditingDl())return;dlSync()}
+async function dlSync(){try{const d=await call('/admin/downloads');if(!d||!d.downloads)return;dlData=d.downloads;renderDlAdmin()}catch(e){}}
+function refreshAdminOnFocus(){if(!user||user.role!=='admin')return;if(currentView!=='admin')return;if(adminEditingDl())return;dlSync()}
 window.addEventListener('focus',refreshAdminOnFocus);
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')refreshAdminOnFocus()});
 
@@ -611,17 +785,108 @@ $('chartBtn').onclick=function(){$('chartModal').classList.add('active');loadTra
 $('chartCloseBtn').onclick=function(){$('chartModal').classList.remove('active');if(chartTimer){clearInterval(chartTimer);chartTimer=null}};
 document.querySelectorAll('[data-chart]').forEach(b=>{b.onclick=function(){document.querySelectorAll('[data-chart]').forEach(x=>x.classList.remove('active'));this.classList.add('active');chartDays=parseInt(this.dataset.chart);loadTraffic()}});
 
-function updateGreeting(){const n=new Date(),h=n.getHours();let g='下午好';if(h>=5&&h<12)g='早上好';else if(h>=12&&h<14)g='中午好';else if(h>=18)g='晚上好';const un=user?user.username:'子云';const suffix=user&&user.role==='admin'?'（管理员）':'';typewriter($('greeting'),g+'，'+un+suffix)}
-
-function ui(autoAdmin){if(user){const a=user.role==='admin';$('badgeText').textContent=a?'管理员':user.username;updateGreeting();if(a&&autoAdmin){$('adminPanel').classList.add('active');$('normalView').style.display='none';loadAdmin()}else{$('adminPanel').classList.remove('active');$('normalView').style.display='grid'}$('passInput').value=''}else{$('badgeText').textContent='未登录';$('adminPanel').classList.remove('active');$('normalView').style.display='grid';status('请输入用户名和密码','fa-comment-dots','var(--text-3)')}}
-
-$('loginBtn').onclick=e=>{e.preventDefault();login()};$('regBtn').onclick=e=>{e.preventDefault();register()};$('logoutBtn').onclick=e=>{e.preventDefault();logout()};
-$('passInput').onkeypress=e=>{if(e.key==='Enter')login()};$('userInput').onkeypress=e=>{if(e.key==='Enter')login()};
+// ===== 事件绑定 =====
+$('loginBtn').onclick=function(e){e.preventDefault();login()};
+$('regBtn').onclick=function(e){e.preventDefault();register()};
+$('passInput').onkeypress=function(e){if(e.key==='Enter')login()};
+$('userInput').onkeypress=function(e){if(e.key==='Enter')login()};
 $('pwToggle').onclick=function(){const v=$('passInput').type==='text';$('passInput').type=v?'password':'text';this.textContent=v?'👁️':'👁️‍🗨️'};
-$('badgeClick').onclick=function(){if(user&&user.role==='admin'){if($('adminPanel').classList.contains('active')){toast('已在控制台','fa-info-circle',1500);return}$('adminPanel').classList.add('active');$('normalView').style.display='none';loadAdmin();toast('控制台','fa-sliders-h',2000)}else{toast('需要管理员登录','fa-exclamation-triangle',2000)}};
 
-(function(){const btn=document.getElementById('exitBtn');if(!btn)return;let isDragging=false,dragStarted=false,offX=0,offY=0;let fixedX=window.innerWidth-70,fixedY=window.innerHeight-130;try{const saved=localStorage.getItem('zy-exit-pos');if(saved){const p=JSON.parse(saved);if(typeof p.x==='number'&&typeof p.y==='number'&&p.x>=0&&p.y>=0){fixedX=p.x;fixedY=p.y}}}catch(e){}function syncPos(){btn.style.left=fixedX+'px';btn.style.top=fixedY+'px'}btn.addEventListener('pointerdown',function(e){isDragging=true;dragStarted=false;offX=e.clientX-fixedX;offY=e.clientY-fixedY;btn.style.cursor='grabbing';e.preventDefault()});document.addEventListener('pointermove',function(e){if(!isDragging)return;dragStarted=true;let x=e.clientX-offX,y=e.clientY-offY;if(isNaN(x)||isNaN(y))return;x=Math.max(0,Math.min(x,window.innerWidth-btn.offsetWidth));y=Math.max(0,Math.min(y,window.innerHeight-btn.offsetHeight));fixedX=x;fixedY=y;syncPos()});document.addEventListener('pointerup',function(){if(!isDragging)return;isDragging=false;btn.style.cursor='grab';if(dragStarted){localStorage.setItem('zy-exit-pos',JSON.stringify({x:fixedX,y:fixedY}))}else{$('adminPanel').classList.remove('active');$('normalView').style.display='grid';status('返回','fa-arrow-left','var(--primary)')}});btn.addEventListener('pointercancel',function(){isDragging=false;btn.style.cursor='grab'});window.addEventListener('scroll',syncPos);new MutationObserver(function(){const active=$('adminPanel').classList.contains('active');btn.classList.toggle('show',active);if(active)syncPos()}).observe($('adminPanel'),{attributes:true,attributeFilter:['class']})})();
+// ===== 右上角徽章 =====
+const badge=$('badgeClick');
+badge.addEventListener('click',function(e){
+ if(!user){toast('请先登录','fa-exclamation-triangle',2000);return}
+ if(user.role!=='admin'){toast('普通用户无管理权限','fa-exclamation-triangle',2000);return}
+ if(currentView==='admin'){toast('已在管理员面板','fa-info-circle',1500);return}
+ switchView('admin');loadAdmin();toast('进入管理员面板','fa-sliders-h',1500);
+});
+badge.addEventListener('contextmenu',function(e){
+ e.preventDefault();
+ if(!user){toast('请先登录','fa-exclamation-triangle',2000);return}
+ const menu=$('contextMenu');
+ const rect=badge.getBoundingClientRect();
+ menu.style.left=(rect.right-170)+'px';
+ menu.style.top=(rect.bottom+6)+'px';
+ menu.classList.toggle('active');
+});
+document.addEventListener('click',function(e){
+ if(!e.target.closest('.context-menu')&&!e.target.closest('.admin-badge')){
+  $('contextMenu').classList.remove('active');
+ }
+});
+$('menuSwitchAccount').onclick=function(){
+ $('contextMenu').classList.remove('active');
+ if(!user){toast('请先登录','fa-exclamation-triangle',2000);return}
+ logout();
+ toast('已退出，请重新登录','fa-exchange-alt',2000);
+};
+$('menuLogout').onclick=function(){
+ $('contextMenu').classList.remove('active');
+ logout();
+};
 
+// ===== 可拖动返回按钮 =====
+(function(){
+ const btn=$('floatBackBtn');
+ if(!btn)return;
+ let isDragging=false,dragStarted=false,offX=0,offY=0;
+ let posX=window.innerWidth-72,posY=window.innerHeight-180;
+ try{
+  const saved=localStorage.getItem('zy-floatback-pos');
+  if(saved){const p=JSON.parse(saved);if(typeof p.x==='number'&&typeof p.y==='number'){posX=p.x;posY=p.y}}
+ }catch(e){}
+ function syncPos(){
+  btn.style.left=posX+'px';
+  btn.style.top=posY+'px';
+  btn.style.right='auto';
+  btn.style.bottom='auto';
+ }
+ btn.addEventListener('pointerdown',function(e){
+  isDragging=true;dragStarted=false;
+  const rect=btn.getBoundingClientRect();
+  offX=e.clientX-rect.left;
+  offY=e.clientY-rect.top;
+  btn.style.cursor='grabbing';
+  e.preventDefault();
+ });
+ document.addEventListener('pointermove',function(e){
+  if(!isDragging)return;
+  dragStarted=true;
+  let x=e.clientX-offX,y=e.clientY-offY;
+  x=Math.max(0,Math.min(x,window.innerWidth-btn.offsetWidth));
+  y=Math.max(0,Math.min(y,window.innerHeight-btn.offsetHeight));
+  posX=x;posY=y;syncPos();
+ });
+ document.addEventListener('pointerup',function(){
+  if(!isDragging)return;
+  isDragging=false;btn.style.cursor='grab';
+  if(dragStarted){
+   localStorage.setItem('zy-floatback-pos',JSON.stringify({x:posX,y:posY}));
+  }else{
+   if(currentView==='admin'){
+    switchView('download');
+    toast('已返回主页面','fa-home',1500);
+   }
+  }
+ });
+ btn.addEventListener('pointercancel',function(){isDragging=false;btn.style.cursor='grab'});
+ btn.style.position='fixed';
+ syncPos();
+ const observer=new MutationObserver(function(){
+  const isAdmin=currentView==='admin';
+  btn.classList.toggle('show',isAdmin);
+  if(isAdmin)syncPos();
+ });
+ observer.observe($('adminView'),{attributes:true,attributeFilter:['class']});
+ window.addEventListener('resize',function(){
+  posX=Math.min(posX,window.innerWidth-btn.offsetWidth);
+  posY=Math.min(posY,window.innerHeight-btn.offsetHeight);
+  syncPos();
+ });
+ btn.classList.toggle('show',currentView==='admin');
+})();
+
+// ===== 管理员面板功能 =====
 $('refreshBtn').onclick=function(){if(user&&user.role==='admin'){const b=this;b.disabled=true;b.innerHTML='<i class="fas fa-spinner fa-pulse"></i> 刷新中...';loadAdmin();setTimeout(()=>{b.disabled=false;b.innerHTML='<i class="fas fa-sync"></i> 刷新';toast('已刷新','fa-sync',2000)},600)}else{toast('请先登录','fa-exclamation-triangle',2000)}};
 $('clearLogsBtn').onclick=function(){if(user&&user.role==='admin')clearLogs();else toast('请先登录','fa-exclamation-triangle',2000)};
 let searchTimer;$('logSearch').oninput=function(){clearTimeout(searchTimer);searchTimer=setTimeout(()=>{const af=document.querySelector('#logFilters .filter-btn.active');loadLogs(af?af.dataset.fl:'all')},300)};
@@ -635,26 +900,19 @@ const poems=['路漫漫其修远兮，吾将上下而求索。——屈原《离
 (function(){const idx=Math.floor(Math.random()*poems.length);$('poemText').textContent=poems[idx]})();
 
 fetch('/api/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({bytes:50000})}).catch(()=>{});
-setInterval(function(){if(user&&user.role==='admin'&&$('adminPanel').classList.contains('active')){call('/admin/stats').then(s=>updateStats(s)).catch(()=>{});if($('chartModal').classList.contains('active'))loadTraffic()}},30000);
+setInterval(function(){if(user&&user.role==='admin'&&currentView==='admin'){call('/admin/stats').then(s=>updateStats(s)).catch(()=>{});if($('chartModal').classList.contains('active'))loadTraffic()}},30000);
 
+// ===== Ripple & 鼠标光晕 & 滚动动画 =====
 (function(){
- const sel='.btn,.btn-sm,.dl-link,.filter-btn,.theme-toggle,.bg-btn,.float-exit,.back-to-top,.su,.du,.admin-badge,.ql-item,.notif-btn';
+ const sel='.btn,.filter-btn,.theme-toggle,.bg-btn,.back-to-top,.admin-badge,.ql-item,.notif-btn,.float-back';
  document.addEventListener('click',function(e){const btn=e.target.closest(sel);if(!btn)return;const rect=btn.getBoundingClientRect();if(rect.width===0||rect.height===0)return;const r=document.createElement('span');r.className='ripple';const size=Math.max(rect.width,rect.height);r.style.width=r.style.height=size+'px';r.style.left=(e.clientX-rect.left-size/2)+'px';r.style.top=(e.clientY-rect.top-size/2)+'px';btn.classList.add('ripple-wrap');btn.appendChild(r);r.addEventListener('animationend',function(){r.remove()})});
-
- // Mouse glow
  const mg=$('mouseGlow');if(mg){let ticking=false;document.addEventListener('mousemove',function(e){if(!ticking){requestAnimationFrame(function(){mg.style.left=e.clientX+'px';mg.style.top=e.clientY+'px';ticking=false});ticking=true}})}
-
- // Scroll animations
  const obs=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting)entry.target.classList.add('visible')})},{threshold:.12});
  document.querySelectorAll('.anim-on-scroll').forEach(function(el){obs.observe(el)});
-
- // 3D tilt
  document.querySelectorAll('.tilt-hover').forEach(function(el){
   el.addEventListener('mousemove',function(e){const r=this.getBoundingClientRect();const x=(e.clientX-r.left)/r.width-.5;const y=(e.clientY-r.top)/r.height-.5;this.style.transform='perspective(600px) rotateX('+(-y*5)+'deg) rotateY('+(x*5)+'deg)'});
   el.addEventListener('mouseleave',function(){this.style.transform='perspective(600px) rotateX(0) rotateY(0)'});
  });
-
- // Notification bell
  let notifLoaded=false;
  $('notifBtn').onclick=function(e){e.stopPropagation();const p=$('notifPanel');const wasActive=p.classList.contains('active');p.classList.toggle('active',!wasActive);if(!wasActive&&!notifLoaded){loadNotifs();notifLoaded=true}};
  document.addEventListener('click',function(e){if(!e.target.closest('.notif-wrap'))$('notifPanel').classList.remove('active')});
@@ -662,8 +920,14 @@ setInterval(function(){if(user&&user.role==='admin'&&$('adminPanel').classList.c
  async function loadNotifs(){try{const d=await call('/admin/logs?filter=all');const logs=(d.logs||[]).slice(0,8);const list=$('notifList');list.innerHTML='';if(!logs.length){list.innerHTML='<div class="notif-empty">暂无通知</div>';return}const am={login:'登录',logout:'退出',register:'注册',download:'下载',admin:'管理',delete:'删除',update:'修改'};logs.forEach(function(e){const item=document.createElement('div');item.className='notif-item';let t;try{t=new Date(e.created_at+'Z').toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false,timeStyle:'short'})}catch(ex){t=''}item.innerHTML='<i class="fas fa-circle" style="font-size:5px;color:var(--primary);flex-shrink:0"></i><div style="flex:1;min-width:0"><div style="font-weight:500;color:var(--text-1);margin-bottom:2px">'+e.username+' '+(am[e.action]||e.action)+'</div><div style="font-size:.75rem;color:var(--text-3)">'+t+'</div></div>';list.appendChild(item)});$('notifBadge').style.display='flex';$('notifBadge').textContent=Math.min(logs.length,9)}catch(e){}}
 })();
 
-restore().then(()=>{if(!user)status('请输入用户名和密码','fa-comment-dots','var(--text-3)')});
+// ===== 初始化 =====
+restore().then(()=>{
+ if(!user){switchView('login');status('请输入用户名和密码','fa-comment-dots','var(--text-3)')}
+ else{ui()}
+});
 console.log('[子云] 鸿蒙风格 v2+ 已加载');
+console.log('📌 右上角徽章左击→管理员面板 | 右击→切换账户');
+console.log('📌 管理员面板内可拖动的小圆点→返回主页面');
 })();
 </script>
 </body>
